@@ -21,11 +21,6 @@ export const TurnLegend: React.FC<TurnLegendProps> = ({ currentTurn, gameOver })
           style={{ background: 'radial-gradient(circle at 35% 30%, #4a4a52, #0a0a0c 70%)' }}
         />
         <span className="text-[12.5px] text-[#cfe0ff] font-bold">Svart</span>
-        <span className="flex items-center gap-1.5 text-[13px] font-extrabold text-[#8fa9d6]">
-          <span className="bg-[#3b82f6]/20 border border-[#3b82f6]/40 py-0.5 px-2 rounded-[7px]">1</span>
-          <span className="tracking-[-3px] text-[#5b7bb8] font-black">›››</span>
-          <span className="bg-[#3b82f6]/20 border border-[#3b82f6]/40 py-0.5 px-2 rounded-[7px]">24</span>
-        </span>
         <span className="ml-auto text-[11px] font-bold text-[#8fa9d6] bg-[#3b82f6]/10 border border-[#3b82f6]/30 py-[3px] px-2 rounded-lg">
           Hjem 19–24
         </span>
@@ -41,11 +36,6 @@ export const TurnLegend: React.FC<TurnLegendProps> = ({ currentTurn, gameOver })
           style={{ background: 'radial-gradient(circle at 35% 30%, #fdf6e8, #e0c894 70%)' }}
         />
         <span className="text-[12.5px] text-[#f3e0a8] font-bold">Hvit</span>
-        <span className="flex items-center gap-1.5 text-[13px] font-extrabold text-[#d8c096]">
-          <span className="bg-[#c9a24a]/20 border border-[#c9a24a]/40 py-0.5 px-2 rounded-[7px]">24</span>
-          <span className="tracking-[-3px] text-[#c9a24a] font-black">›››</span>
-          <span className="bg-[#c9a24a]/20 border border-[#c9a24a]/40 py-0.5 px-2 rounded-[7px]">1</span>
-        </span>
         <span className="ml-auto text-[11px] font-bold text-[#e8cd85] bg-[#c9a24a]/[0.13] border border-[#c9a24a]/30 py-[3px] px-2 rounded-lg">
           Hjem 1–6
         </span>
