@@ -22,6 +22,7 @@ import { sounds } from './utils/sound';
 import { Board } from './components/Board';
 import { Controls } from './components/Controls';
 import { Header } from './components/Header';
+import { RotateCw } from 'lucide-react';
 
 export const App: React.FC = () => {
   const [gameState, setGameState] = useState<GameState>(() => {
@@ -51,6 +52,23 @@ export const App: React.FC = () => {
       stats: { whiteWins: 0, blackWins: 0 },
     };
   });
+
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [hitFlashPoint, setHitFlashPoint] = useState<number | null>(null);
+
+  const showToast = (msg: string) => {
+    setToastMessage(msg);
+    setTimeout(() => {
+      setToastMessage((curr) => (curr === msg ? null : curr));
+    }, 2500);
+  };
+
+  const triggerHitFlash = (pointIndex: number) => {
+    setHitFlashPoint(pointIndex);
+    setTimeout(() => {
+      setHitFlashPoint(null);
+    }, 700);
+  };
 
   const pipWhite = calculatePipCount(
     gameState.points,
@@ -84,7 +102,7 @@ export const App: React.FC = () => {
         );
 
         if (valid.length === 0) {
-          // No moves possible -> auto pass turn to next player
+          showToast('Ingen lovlige trekk – turen går videre');
           const nextPlayer: Player = prev.currentTurn === 'white' ? 'black' : 'white';
           return {
             ...prev,
@@ -126,6 +144,9 @@ export const App: React.FC = () => {
       // Play move or hit sound
       if (move.hit) {
         sounds.playHit(prev.soundEnabled);
+        if (typeof move.to === 'number') {
+          triggerHitFlash(move.to);
+        }
       } else {
         sounds.playCheckerMove(prev.soundEnabled);
       }
@@ -135,7 +156,7 @@ export const App: React.FC = () => {
 
       if (winner) {
         sounds.playWin(prev.soundEnabled);
-        confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
+        confetti({ particleCount: 120, spread: 80, origin: { y: 0.6 } });
 
         return {
           ...prev,
@@ -178,7 +199,9 @@ export const App: React.FC = () => {
       );
 
       if (remaining.length === 0 || nextValid.length === 0) {
-        // Turn completed -> switch turn to next player & clear dice
+        if (remaining.length > 0 && nextValid.length === 0) {
+          showToast('Ingen flere lovlige trekk – turen går videre');
+        }
         const nextPlayer: Player = prev.currentTurn === 'white' ? 'black' : 'white';
         return {
           ...prev,
@@ -210,11 +233,30 @@ export const App: React.FC = () => {
     });
   };
 
+  // Drag and drop / Direct move execution
+  const handleExecuteDirectMove = (
+    from: number | 'bar' | 'reserve',
+    to: number | 'off'
+  ) => {
+    const move = gameState.validMoves.find((m) => m.from === from && m.to === to);
+    if (move) {
+      executeMove(move);
+    } else {
+      if (gameState.bar[gameState.currentTurn] > 0 && from !== 'bar') {
+        showToast('Sett inn brikke fra baren først!');
+      }
+    }
+  };
+
   // Handle Point click
   const handlePointClick = (pointIndex: number) => {
     if (gameState.turnPhase !== 'move' || gameState.winner) return;
 
-    // Case A: Origin selected, point is valid target -> execute move
+    if (gameState.bar[gameState.currentTurn] > 0 && gameState.selectedOrigin !== 'bar') {
+      showToast('Sett inn brikke fra baren først!');
+      return;
+    }
+
     if (gameState.selectedOrigin !== null) {
       const move = gameState.validMoves.find(
         (m) => m.from === gameState.selectedOrigin && m.to === pointIndex
@@ -225,7 +267,6 @@ export const App: React.FC = () => {
       }
     }
 
-    // Case B: Select origin
     const movesFromPoint = gameState.validMoves.filter((m) => m.from === pointIndex);
     if (movesFromPoint.length > 0) {
       setGameState((prev) => ({
@@ -402,7 +443,7 @@ export const App: React.FC = () => {
           if (aiMove) {
             executeMove(aiMove);
           } else {
-            // Auto pass if AI has no valid moves left
+            showToast('Datamaskin har ingen flere lovlige trekk');
             setGameState((prev) => ({
               ...prev,
               dice: [],
@@ -421,7 +462,18 @@ export const App: React.FC = () => {
   }, [gameState]);
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col items-center justify-between p-3 sm:p-6 font-sans">
+    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col items-center justify-between p-3 sm:p-6 font-sans relative">
+      {/* Mobile Portrait Rotation Overlay */}
+      <div className="fixed inset-0 z-[100] bg-slate-950 flex flex-col items-center justify-center gap-4 text-center p-6 sm:hidden portrait:flex landscape:hidden">
+        <div className="w-14 h-24 border-4 border-amber-400 rounded-2xl animate-spin relative flex items-center justify-center">
+          <RotateCw className="w-8 h-8 text-amber-400" />
+        </div>
+        <h2 className="text-xl font-bold text-amber-300">Vri Skjermen Din</h2>
+        <p className="text-xs text-slate-300 max-w-xs">
+          Backgammon-brettet krever liggende format (landscape) for best visning og spillopplevelse.
+        </p>
+      </div>
+
       <Header
         soundEnabled={gameState.soundEnabled}
         onToggleSound={() =>
@@ -437,6 +489,8 @@ export const App: React.FC = () => {
           onBarClick={handleBarClick}
           onReserveClick={handleReserveClick}
           onOffClick={handleOffClick}
+          onExecuteMove={handleExecuteDirectMove}
+          hitFlashPoint={hitFlashPoint}
         />
 
         <Controls
@@ -451,6 +505,13 @@ export const App: React.FC = () => {
           pipBlack={pipBlack}
         />
       </main>
+
+      {/* Floating Toast Notification */}
+      {toastMessage && (
+        <div className="fixed bottom-8 left-1/2 -translate-x-1/2 bg-slate-900 border-2 border-amber-500/50 text-slate-100 px-6 py-3 rounded-2xl shadow-2xl font-bold text-sm z-50 animate-bounce">
+          {toastMessage}
+        </div>
+      )}
 
       <footer className="py-2 text-center text-xs text-slate-500 font-medium">
         Backgammon Master &bull; Antigravity Edition

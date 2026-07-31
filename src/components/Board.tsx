@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import type { GameState, Player } from '../types/backgammon';
 
 interface BoardProps {
@@ -7,6 +7,8 @@ interface BoardProps {
   onBarClick: (player: Player) => void;
   onReserveClick: (player: Player) => void;
   onOffClick: () => void;
+  onExecuteMove: (from: number | 'bar' | 'reserve', to: number | 'off') => void;
+  hitFlashPoint: number | null;
 }
 
 export const Board: React.FC<BoardProps> = ({
@@ -15,6 +17,8 @@ export const Board: React.FC<BoardProps> = ({
   onBarClick,
   onReserveClick,
   onOffClick,
+  onExecuteMove,
+  hitFlashPoint,
 }) => {
   const {
     points,
@@ -28,11 +32,53 @@ export const Board: React.FC<BoardProps> = ({
     startRule,
   } = gameState;
 
+  // Drag and Drop state
+  const [dragOrigin, setDragOrigin] = useState<number | 'bar' | 'reserve' | null>(null);
+  const [dragPos, setDragPos] = useState<{ x: number; y: number } | null>(null);
+
+  // Global Pointer Listeners for Drag and Drop
+  useEffect(() => {
+    const handlePointerMove = (e: PointerEvent) => {
+      if (dragOrigin !== null) {
+        setDragPos({ x: e.clientX, y: e.clientY });
+      }
+    };
+
+    const handlePointerUp = (e: PointerEvent) => {
+      if (dragOrigin !== null) {
+        const elem = document.elementFromPoint(e.clientX, e.clientY);
+        const dropTarget = elem?.closest('[data-drop-target]');
+        if (dropTarget) {
+          const targetAttr = dropTarget.getAttribute('data-drop-target');
+          if (targetAttr === 'off') {
+            onExecuteMove(dragOrigin, 'off');
+          } else if (targetAttr) {
+            const targetPoint = parseInt(targetAttr, 10);
+            if (!isNaN(targetPoint)) {
+              onExecuteMove(dragOrigin, targetPoint as any);
+            }
+          }
+        }
+        setDragOrigin(null);
+        setDragPos(null);
+      }
+    };
+
+    if (dragOrigin !== null) {
+      window.addEventListener('pointermove', handlePointerMove);
+      window.addEventListener('pointerup', handlePointerUp);
+    }
+    return () => {
+      window.removeEventListener('pointermove', handlePointerMove);
+      window.removeEventListener('pointerup', handlePointerUp);
+    };
+  }, [dragOrigin, onExecuteMove]);
+
   // Theme styling definitions
   const themeStyles = {
     mahogany: {
       boardBg: 'bg-[#2a1708] border-[#4a2b13]',
-      feltBg: 'bg-[#1a2e22]', // Classic deep green felt
+      feltBg: 'bg-[#1a2e22]',
       woodFrame: 'border-[#5c3417] bg-[#3a1e0b]',
       pointLight: 'fill-[#d9ab7e]',
       pointDark: 'fill-[#6b3e26]',
@@ -58,23 +104,37 @@ export const Board: React.FC<BoardProps> = ({
 
   const isSelected = (origin: number | 'bar' | 'reserve') => selectedOrigin === origin;
 
-  // Get move target details if target
   const getTargetMove = (to: number | 'off') => {
-    if (selectedOrigin === null) return null;
-    return validMoves.find((m) => m.from === selectedOrigin && m.to === to) || null;
+    if (selectedOrigin === null && dragOrigin === null) return null;
+    const origin = selectedOrigin !== null ? selectedOrigin : dragOrigin;
+    return validMoves.find((m) => m.from === origin && m.to === to) || null;
   };
 
-  const renderCheckers = (checkers: Player[]) => {
+  const handlePointerDownOrigin = (origin: number | 'bar' | 'reserve', e: React.PointerEvent) => {
+    const hasValidMoves = validMoves.some((m) => m.from === origin);
+    if (hasValidMoves) {
+      setDragOrigin(origin);
+      setDragPos({ x: e.clientX, y: e.clientY });
+    }
+  };
+
+  const renderCheckers = (checkers: Player[], origin: number | 'bar' | 'reserve') => {
     if (!checkers || checkers.length === 0) return null;
 
     const count = checkers.length;
     const player = checkers[0];
     const isWhite = player === 'white';
+    const isBeingDragged = dragOrigin === origin;
 
     return (
-      <div className="relative flex flex-col items-center justify-center w-full h-full">
+      <div
+        onPointerDown={(e) => handlePointerDownOrigin(origin, e)}
+        className={`relative flex flex-col items-center justify-center w-full h-full cursor-grab active:cursor-grabbing ${
+          isBeingDragged ? 'opacity-40' : ''
+        }`}
+      >
         <div className="relative flex flex-col items-center">
-          {Array.from({ length: Math.min(count, 5) }).map((_, i) => (
+          {Array.from({ length: Math.min(count, 4) }).map((_, i) => (
             <div
               key={i}
               className={`w-7 h-7 sm:w-9 sm:h-9 md:w-11 md:h-11 rounded-full shadow-lg border-2 transition-all transform ${
@@ -97,9 +157,9 @@ export const Board: React.FC<BoardProps> = ({
             </div>
           ))}
 
-          {count > 5 && (
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-amber-500 text-slate-950 font-black text-xs px-2 py-0.5 rounded-full shadow-lg border border-amber-300">
-              +{count - 5}
+          {count > 4 && (
+            <div className="mt-1 bg-amber-500 text-slate-950 font-black text-[10px] sm:text-xs px-2 py-0.5 rounded-full shadow-lg border border-amber-300">
+              ×{count}
             </div>
           )}
         </div>
@@ -113,22 +173,30 @@ export const Board: React.FC<BoardProps> = ({
     const selected = isSelected(pointIndex);
     const targetMove = getTargetMove(pointIndex);
     const pointCheckers = points[pointIndex] || [];
+    const isHitFlashed = hitFlashPoint === pointIndex;
 
-    // Is this point inside a player's home board?
     const isWhiteHome = pointIndex >= 1 && pointIndex <= 6;
     const isBlackHome = pointIndex >= 19 && pointIndex <= 24;
+
+    const startTag =
+      pointIndex === 24
+        ? 'HVIT START'
+        : pointIndex === 1
+        ? 'SVART START'
+        : '';
 
     return (
       <div
         key={pointIndex}
+        data-drop-target={pointIndex}
         onClick={() => onPointClick(pointIndex)}
         className={`relative flex-1 h-full flex flex-col justify-${
           isTop ? 'start' : 'end'
         } items-center cursor-pointer group transition-all ${
           isWhiteHome && !isTop
-            ? 'bg-amber-500/5 border-x border-amber-500/10'
+            ? 'bg-amber-500/10 border-x border-amber-500/20'
             : isBlackHome && isTop
-            ? 'bg-purple-500/5 border-x border-purple-500/10'
+            ? 'bg-purple-500/10 border-x border-purple-500/20'
             : ''
         }`}
       >
@@ -146,9 +214,29 @@ export const Board: React.FC<BoardProps> = ({
           />
         </svg>
 
+        {/* Hit Flash Red Effect */}
+        {isHitFlashed && (
+          <div className="absolute inset-0 bg-red-600/60 rounded animate-ping pointer-events-none z-30" />
+        )}
+
         {/* Selected Highlight Glow */}
         {selected && (
           <div className="absolute inset-0 bg-amber-400/30 border-2 border-amber-400 rounded pointer-events-none animate-pulse z-10" />
+        )}
+
+        {/* Start Tag Badge */}
+        {startTag && (
+          <div
+            className={`absolute ${
+              isTop ? 'top-6' : 'bottom-6'
+            } text-[7px] sm:text-[9px] font-black tracking-widest px-1.5 py-0.5 rounded bg-slate-950/80 border z-20 ${
+              pointIndex === 24
+                ? 'text-amber-300 border-amber-400/50'
+                : 'text-purple-300 border-purple-400/50'
+            }`}
+          >
+            {startTag}
+          </div>
         )}
 
         {/* Target Destination Indicator */}
@@ -176,7 +264,7 @@ export const Board: React.FC<BoardProps> = ({
 
         {/* Checkers Stack */}
         <div className={`z-10 py-1 ${isTop ? 'pt-5' : 'pb-5'}`}>
-          {renderCheckers(pointCheckers)}
+          {renderCheckers(pointCheckers, pointIndex)}
         </div>
       </div>
     );
@@ -186,16 +274,16 @@ export const Board: React.FC<BoardProps> = ({
   const blackOffTarget = getTargetMove('off') && currentTurn === 'black';
 
   return (
-    <div className="w-full max-w-5xl flex flex-col items-center gap-1.5 select-none">
+    <div className="w-full max-w-5xl flex flex-col items-center gap-1.5 select-none relative">
       {/* Top Banner: Player Movement Directions */}
       <div className="w-full flex items-center justify-between px-4 py-1.5 rounded-xl bg-slate-900/90 border border-slate-800 text-xs font-bold text-slate-300">
         <div className="flex items-center gap-2">
           <span className="w-2.5 h-2.5 rounded-full bg-slate-800 border border-slate-600" />
           <span className="text-slate-300">Svart Retning:</span>
-          <span className="text-slate-400 font-normal">Felt 1 ➔ 24 (Hjemmefelt: 19-24 Øverst Høyere)</span>
+          <span className="text-slate-400 font-normal">Felt 1 ➔ 24 (Hjemmefelt: 19-24 Øverst Høyre)</span>
         </div>
         <div className="flex items-center gap-2">
-          <span className="text-amber-400 font-normal">Felt 24 ➔ 1 (Hjemmefelt: 1-6 Nederst Høyere)</span>
+          <span className="text-amber-400 font-normal">Felt 24 ➔ 1 (Hjemmefelt: 1-6 Nederst Høyre)</span>
           <span className="text-amber-300">:Hvit Retning</span>
           <span className="w-2.5 h-2.5 rounded-full bg-amber-100 border border-amber-300" />
         </div>
@@ -216,11 +304,14 @@ export const Board: React.FC<BoardProps> = ({
                   ? 'bg-amber-500/30 ring-2 ring-amber-400'
                   : 'hover:bg-white/5'
               }`}
-              title="Hvit Reserve (Klikk for å flytte inn)"
+              title="Hvit Reserve (Klikk eller dra inn)"
             >
               <span className="text-[9px] sm:text-[10px] text-amber-200 font-bold mb-1">Reserve</span>
               {reserve.white > 0 ? (
-                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-amber-50 to-amber-200 text-amber-950 font-bold flex items-center justify-center text-xs shadow border border-amber-300 animate-pulse">
+                <div
+                  onPointerDown={(e) => handlePointerDownOrigin('reserve', e)}
+                  className="w-8 h-8 rounded-full bg-gradient-to-br from-amber-50 to-amber-200 text-amber-950 font-bold flex items-center justify-center text-xs shadow border border-amber-300 animate-pulse cursor-grab active:cursor-grabbing"
+                >
                   {reserve.white}
                 </div>
               ) : (
@@ -255,7 +346,10 @@ export const Board: React.FC<BoardProps> = ({
               }`}
             >
               {bar.white > 0 && (
-                <div className="relative flex flex-col items-center">
+                <div
+                  onPointerDown={(e) => handlePointerDownOrigin('bar', e)}
+                  className="relative flex flex-col items-center cursor-grab active:cursor-grabbing"
+                >
                   <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-gradient-to-br from-amber-50 to-amber-200 border-2 border-amber-300 shadow-lg flex items-center justify-center font-bold text-amber-950 text-xs">
                     {bar.white}
                   </div>
@@ -274,7 +368,10 @@ export const Board: React.FC<BoardProps> = ({
               }`}
             >
               {bar.black > 0 && (
-                <div className="relative flex flex-col items-center">
+                <div
+                  onPointerDown={(e) => handlePointerDownOrigin('bar', e)}
+                  className="relative flex flex-col items-center cursor-grab active:cursor-grabbing"
+                >
                   <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-gradient-to-br from-slate-800 to-slate-950 border-2 border-slate-700 shadow-lg flex items-center justify-center font-bold text-amber-100 text-xs">
                     {bar.black}
                   </div>
@@ -294,6 +391,7 @@ export const Board: React.FC<BoardProps> = ({
 
           {/* Off-board Tray Right Top (Black Bear Off) */}
           <div
+            data-drop-target="off"
             onClick={onOffClick}
             className={`w-12 sm:w-16 h-full border-l-2 border-amber-900/50 flex flex-col items-center justify-center p-1 cursor-pointer transition-all ${
               blackOffTarget
@@ -325,11 +423,14 @@ export const Board: React.FC<BoardProps> = ({
                   ? 'bg-amber-500/30 ring-2 ring-amber-400'
                   : 'hover:bg-white/5'
               }`}
-              title="Svart Reserve (Klikk for å flytte inn)"
+              title="Svart Reserve (Klikk eller dra inn)"
             >
               <span className="text-[9px] sm:text-[10px] text-slate-300 font-bold mb-1">Reserve</span>
               {reserve.black > 0 ? (
-                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-slate-800 to-slate-950 text-amber-100 font-bold flex items-center justify-center text-xs shadow border border-slate-700 animate-pulse">
+                <div
+                  onPointerDown={(e) => handlePointerDownOrigin('reserve', e)}
+                  className="w-8 h-8 rounded-full bg-gradient-to-br from-slate-800 to-slate-950 text-amber-100 font-bold flex items-center justify-center text-xs shadow border border-slate-700 animate-pulse cursor-grab active:cursor-grabbing"
+                >
                   {reserve.black}
                 </div>
               ) : (
@@ -361,6 +462,7 @@ export const Board: React.FC<BoardProps> = ({
 
           {/* Off-board Tray Right Bottom (White Bear Off) */}
           <div
+            data-drop-target="off"
             onClick={onOffClick}
             className={`w-12 sm:w-16 h-full border-l-2 border-amber-900/50 flex flex-col items-center justify-center p-1 cursor-pointer transition-all ${
               whiteOffTarget
@@ -376,6 +478,23 @@ export const Board: React.FC<BoardProps> = ({
           </div>
         </div>
       </div>
+
+      {/* Floating Dragging Checker Element */}
+      {dragOrigin !== null && dragPos && (
+        <div
+          className="fixed pointer-events-none z-50 transform -translate-x-1/2 -translate-y-1/2 w-9 h-9 sm:w-11 sm:h-11 rounded-full shadow-2xl border-2"
+          style={{
+            left: `${dragPos.x}px`,
+            top: `${dragPos.y}px`,
+            background:
+              currentTurn === 'white'
+                ? 'radial-gradient(circle at 35% 30%, #fdf6e8, #e0c894 70%)'
+                : 'radial-gradient(circle at 35% 30%, #4a4a52, #0a0a0c 70%)',
+            borderColor: currentTurn === 'white' ? '#a9822f' : '#050506',
+            boxShadow: '0 10px 25px rgba(0,0,0,0.6)',
+          }}
+        />
+      )}
     </div>
   );
 };
