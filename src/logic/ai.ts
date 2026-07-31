@@ -2,22 +2,16 @@ import type { GameState, Move, Player } from '../types/backgammon';
 import { getValidMoves, applyMove, calculatePipCount } from './rules';
 
 export function getAIMove(state: GameState): Move | null {
-  const { points, bar, off, reserve, currentTurn, remainingDice, aiDifficulty } = state;
+  const { points, bar, off, reserve, currentTurn, remainingDice } = state;
 
   const validMoves = getValidMoves(points, bar, reserve, currentTurn, remainingDice);
   if (validMoves.length === 0) return null;
 
-  if (aiDifficulty === 'easy') {
-    // Pick random move
-    return validMoves[Math.floor(Math.random() * validMoves.length)];
-  }
-
-  // Evaluate each valid move candidate
   let bestMove: Move = validMoves[0];
   let bestScore = -Infinity;
 
   for (const move of validMoves) {
-    const { newPoints, newBar, newOff, newReserve } = applyMove(
+    const { newPoints, newBar, newReserve } = applyMove(
       points,
       bar,
       off,
@@ -26,15 +20,7 @@ export function getAIMove(state: GameState): Move | null {
       move
     );
 
-    let score = evaluatePosition(
-      newPoints,
-      newBar,
-      newOff,
-      newReserve,
-      currentTurn,
-      move,
-      aiDifficulty
-    );
+    let score = evaluatePosition(newPoints, newBar, newReserve, currentTurn, move);
 
     // Add tiny random jitter to break ties dynamically
     score += Math.random() * 0.5;
@@ -51,18 +37,16 @@ export function getAIMove(state: GameState): Move | null {
 function evaluatePosition(
   points: { [key: number]: Player[] },
   bar: { white: number; black: number },
-  _off: { white: number; black: number },
   reserve: { white: number; black: number },
   player: Player,
-  move: Move,
-  difficulty: 'medium' | 'master'
+  move: Move
 ): number {
   const opponent: Player = player === 'white' ? 'black' : 'white';
   let score = 0;
 
   // 1. Hitting opponent blot
   if (move.hit) {
-    score += difficulty === 'master' ? 40 : 25;
+    score += 40;
   }
 
   // 2. Bearing off
@@ -80,15 +64,14 @@ function evaluatePosition(
     const checkers = points[p] || [];
     const count = checkers.filter((c) => c === player).length;
     if (count >= 2) {
-      score += difficulty === 'master' ? 8 : 4;
+      score += 8;
       // Extra bonus for home board anchors
       const isHomeBoard = player === 'black' ? p >= 19 : p <= 6;
       if (isHomeBoard) score += 6;
     } else if (count === 1) {
       // Penalty for single exposed blot
       const isHomeBoard = player === 'black' ? p >= 19 : p <= 6;
-      const penalty = isHomeBoard ? -15 : -8;
-      score += difficulty === 'master' ? penalty : -4;
+      score += isHomeBoard ? -15 : -8;
     }
   }
 
@@ -111,7 +94,7 @@ export function getBestHint(state: GameState): Move | null {
   let bestScore = -Infinity;
 
   for (const move of validMoves) {
-    const { newPoints, newBar, newOff, newReserve } = applyMove(
+    const { newPoints, newBar, newReserve } = applyMove(
       points,
       bar,
       off,
@@ -120,15 +103,7 @@ export function getBestHint(state: GameState): Move | null {
       move
     );
 
-    const score = evaluatePosition(
-      newPoints,
-      newBar,
-      newOff,
-      newReserve,
-      currentTurn,
-      move,
-      'master'
-    );
+    const score = evaluatePosition(newPoints, newBar, newReserve, currentTurn, move);
 
     if (score > bestScore) {
       bestScore = score;

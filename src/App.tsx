@@ -5,7 +5,6 @@ import type {
   Player,
   StartRule,
   GameMode,
-  AIDifficulty,
   BoardTheme,
   Move,
 } from './types/backgammon';
@@ -36,7 +35,6 @@ export const App: React.FC = () => {
       reserve: initialBoard.reserve,
       startRule,
       gameMode: 'ai',
-      aiDifficulty: 'medium',
       boardTheme: 'mahogany',
       currentTurn: 'white',
       dice: [],
@@ -398,7 +396,6 @@ export const App: React.FC = () => {
   const handleNewGame = (config: {
     startRule: StartRule;
     gameMode: GameMode;
-    aiDifficulty: AIDifficulty;
     boardTheme: BoardTheme;
   }) => {
     const newBoard = createInitialBoard(config.startRule);
@@ -410,7 +407,6 @@ export const App: React.FC = () => {
       reserve: newBoard.reserve,
       startRule: config.startRule,
       gameMode: config.gameMode,
-      aiDifficulty: config.aiDifficulty,
       boardTheme: config.boardTheme,
       currentTurn: 'white',
       dice: [],
@@ -436,7 +432,6 @@ export const App: React.FC = () => {
     handleNewGame({
       startRule: gameState.startRule,
       gameMode: gameState.gameMode,
-      aiDifficulty: gameState.aiDifficulty,
       boardTheme: gameState.boardTheme,
     });
   };
@@ -460,7 +455,7 @@ export const App: React.FC = () => {
           if (aiMove) {
             executeMove(aiMove);
           } else {
-            showToast('Datamaskin har ingen flere lovlige trekk');
+            showToast('Linnea har ingen flere lovlige trekk');
             setGameState((prev) => ({
               ...prev,
               dice: [],
@@ -511,7 +506,6 @@ export const App: React.FC = () => {
       <DiceBar
         currentTurn={gameState.currentTurn}
         gameMode={gameState.gameMode}
-        aiDifficulty={gameState.aiDifficulty}
         gameOver={!!gameState.winner}
         dice={gameState.dice}
         remainingDice={gameState.remainingDice}

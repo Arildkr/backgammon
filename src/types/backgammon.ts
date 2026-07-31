@@ -4,8 +4,6 @@ export type StartRule = 'inne' | 'ute'; // 'inne' = standard position, 'ute' = a
 
 export type GameMode = 'pvp' | 'ai';
 
-export type AIDifficulty = 'easy' | 'medium' | 'master';
-
 export type BoardTheme = 'mahogany' | 'leather' | 'cyber';
 
 export interface Move {
@@ -30,7 +28,6 @@ export interface GameState {
   
   startRule: StartRule;
   gameMode: GameMode;
-  aiDifficulty: AIDifficulty;
   boardTheme: BoardTheme;
   
   currentTurn: Player;

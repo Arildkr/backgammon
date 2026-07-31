@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import type { GameState, StartRule, GameMode, AIDifficulty, BoardTheme } from '../types/backgammon';
+import type { GameState, StartRule, GameMode, BoardTheme } from '../types/backgammon';
 import { RotateCcw, Lightbulb, Settings, Trophy } from 'lucide-react';
 
 interface ControlsProps {
@@ -11,7 +11,6 @@ interface ControlsProps {
   onNewGame: (config: {
     startRule: StartRule;
     gameMode: GameMode;
-    aiDifficulty: AIDifficulty;
     boardTheme: BoardTheme;
   }) => void;
   pipWhite: number;
@@ -37,7 +36,6 @@ export const Controls: React.FC<ControlsProps> = ({
     turnPhase,
     turnHistory,
     gameMode,
-    aiDifficulty,
     startRule,
     boardTheme,
     doublingCube,
@@ -47,7 +45,6 @@ export const Controls: React.FC<ControlsProps> = ({
 
   const [selectedStartRule, setSelectedStartRule] = useState<StartRule>(startRule);
   const [selectedGameMode, setSelectedGameMode] = useState<GameMode>(gameMode);
-  const [selectedAIDifficulty, setSelectedAIDifficulty] = useState<AIDifficulty>(aiDifficulty);
   const [selectedTheme, setSelectedTheme] = useState<BoardTheme>(boardTheme);
 
   const isAITurn = gameMode === 'ai' && currentTurn === 'black';
@@ -56,7 +53,6 @@ export const Controls: React.FC<ControlsProps> = ({
     onNewGame({
       startRule: selectedStartRule,
       gameMode: selectedGameMode,
-      aiDifficulty: selectedAIDifficulty,
       boardTheme: selectedTheme,
     });
     onCloseSettings();
@@ -211,34 +207,10 @@ export const Controls: React.FC<ControlsProps> = ({
                       : 'bg-white/[0.03] border-[#c9a24a]/20 text-[#b8a488]'
                   }`}
                 >
-                  🤖 Mot Datamaskin
+                  👧 Mot Linnea
                 </button>
               </div>
             </div>
-
-            {selectedGameMode === 'ai' && (
-              <div className="flex flex-col gap-2">
-                <label className="text-xs font-bold text-[#e8cd85] uppercase tracking-wider">
-                  Vanskelighetsgrad (AI)
-                </label>
-                <div className="grid grid-cols-3 gap-2">
-                  {(['easy', 'medium', 'master'] as AIDifficulty[]).map((diff) => (
-                    <button
-                      key={diff}
-                      type="button"
-                      onClick={() => setSelectedAIDifficulty(diff)}
-                      className={`py-2 rounded-lg border text-xs font-bold capitalize cursor-pointer ${
-                        selectedAIDifficulty === diff
-                          ? 'bg-[#e8cd85]/15 border-[#e8cd85]/50 text-[#e8cd85]'
-                          : 'bg-white/[0.03] border-[#c9a24a]/20 text-[#b8a488]'
-                      }`}
-                    >
-                      {diff === 'easy' ? 'Enkel' : diff === 'medium' ? 'Medium' : 'Mester'}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
 
             <div className="flex flex-col gap-2">
               <label className="text-xs font-bold text-[#e8cd85] uppercase tracking-wider">Brett-Tema</label>
@@ -276,7 +248,7 @@ export const Controls: React.FC<ControlsProps> = ({
           <div className="relative bg-gradient-to-br from-[#2a1710] to-[#1a0d05] border border-[#c9a24a]/40 p-9 rounded-[20px] max-w-md w-full shadow-2xl flex flex-col items-center text-center gap-3 animate-modal-in">
             <Trophy className="w-11 h-11 text-[#e8cd85]" />
             <h2 className="text-[28px] m-0 text-[#e8cd85]">
-              {winner === 'white' ? 'Hvit vinner!' : 'Svart vinner!'}
+              {winner === 'white' ? 'Hvit vinner!' : `${gameMode === 'ai' ? 'Linnea' : 'Svart'} vinner!`}
             </h2>
             <p className="text-[13px] text-[#b8a488] m-0 uppercase tracking-wider">
               {winType === 'backgammon'
@@ -287,7 +259,7 @@ export const Controls: React.FC<ControlsProps> = ({
             </p>
 
             <button
-              onClick={() => onNewGame({ startRule, gameMode, aiDifficulty, boardTheme })}
+              onClick={() => onNewGame({ startRule, gameMode, boardTheme })}
               className="mt-3 py-3 px-7 rounded-xl bg-gradient-to-br from-[#e8cd85] to-[#8a6a24] text-[#2a1710] font-extrabold text-sm cursor-pointer"
             >
               Nytt parti

@@ -34,7 +34,7 @@ export const Header: React.FC<HeaderProps> = ({
           <div className="rounded-full bg-[#2a1710]" />
         </div>
         <div>
-          <h1 className="text-[24px] leading-tight m-0">Backgammon</h1>
+          <h1 className="text-[24px] leading-tight m-0">Backgammon med Linnea</h1>
           <p className="mt-0.5 text-xs text-[#b8a488]">Klikk eller dra brikkene for å flytte</p>
         </div>
       </div>
@@ -53,7 +53,7 @@ export const Header: React.FC<HeaderProps> = ({
             gameMode === 'ai' ? 'bg-[#e8cd85]/15' : 'bg-white/[0.04]'
           }`}
         >
-          {gameMode === 'ai' ? 'Spiller vs AI' : 'Spiller vs Spiller'}
+          {gameMode === 'ai' ? 'Spiller mot Linnea' : 'Spiller vs Spiller'}
         </button>
 
         <button

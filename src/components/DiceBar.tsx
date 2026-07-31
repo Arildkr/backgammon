@@ -1,10 +1,9 @@
 import React from 'react';
-import type { Player, GameMode, AIDifficulty } from '../types/backgammon';
+import type { Player, GameMode } from '../types/backgammon';
 
 interface DiceBarProps {
   currentTurn: Player;
   gameMode: GameMode;
-  aiDifficulty: AIDifficulty;
   gameOver: boolean;
   dice: number[];
   remainingDice: number[];
@@ -44,7 +43,6 @@ const Die: React.FC<{ value: number; rolling: boolean }> = ({ value, rolling }) 
 export const DiceBar: React.FC<DiceBarProps> = ({
   currentTurn,
   gameMode,
-  aiDifficulty,
   gameOver,
   dice,
   remainingDice,
@@ -52,10 +50,11 @@ export const DiceBar: React.FC<DiceBarProps> = ({
   onRoll,
   canRoll,
 }) => {
+  const blackLabel = gameMode === 'ai' ? 'Linnea' : 'Svart';
   const turnText = gameOver
     ? 'Partiet er over'
-    : (currentTurn === 'white' ? 'Hvit sin tur' : 'Svart sin tur') +
-      (currentTurn === 'black' && gameMode === 'ai' ? ` (AI ${aiDifficulty} tenker…)` : '');
+    : (currentTurn === 'white' ? 'Hvit sin tur' : `${blackLabel} sin tur`) +
+      (currentTurn === 'black' && gameMode === 'ai' ? ' (tenker…)' : '');
   const turnLabelColor = currentTurn === 'white' ? '#f3e0a8' : '#93c5fd';
 
   const rollDisabled = !canRoll || isRolling || gameOver;
