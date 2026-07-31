@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Volume2, VolumeX, HelpCircle, RotateCcw } from 'lucide-react';
+import { Volume2, VolumeX, HelpCircle, RotateCcw, Settings } from 'lucide-react';
 import type { GameMode } from '../types/backgammon';
 
 interface HeaderProps {
@@ -8,6 +8,7 @@ interface HeaderProps {
   gameMode: GameMode;
   onToggleGameMode: () => void;
   onQuickReset: () => void;
+  onOpenSettings: () => void;
   stats: { whiteWins: number; blackWins: number };
 }
 
@@ -17,12 +18,13 @@ export const Header: React.FC<HeaderProps> = ({
   gameMode,
   onToggleGameMode,
   onQuickReset,
+  onOpenSettings,
   stats,
 }) => {
   const [showRules, setShowRules] = useState(false);
 
   return (
-    <header className="w-full max-w-[1180px] flex flex-wrap items-center justify-between gap-3 px-1 pt-0.5 pb-2.5">
+    <header className="w-full max-w-[1180px] flex flex-wrap items-center justify-between gap-3 px-1">
       {/* Logo + Title */}
       <div className="flex items-center gap-3.5">
         <div className="w-[46px] h-[46px] rounded-xl bg-gradient-to-br from-[#e8cd85] to-[#8a6a24] grid grid-cols-2 gap-[5px] p-[7px] shadow-[0_8px_16px_rgba(0,0,0,0.45),inset_0_1px_1px_rgba(255,255,255,0.5)] shrink-0">
@@ -76,6 +78,14 @@ export const Header: React.FC<HeaderProps> = ({
           title="Start nytt parti"
         >
           <RotateCcw className="w-[17px] h-[17px]" />
+        </button>
+
+        <button
+          onClick={onOpenSettings}
+          className="w-[38px] h-[38px] rounded-[11px] bg-white/[0.04] border border-[#c9a24a]/25 text-[#e8cd85] text-[15px] cursor-pointer flex items-center justify-center"
+          title="Innstillinger og nytt spill"
+        >
+          <Settings className="w-[18px] h-[18px]" />
         </button>
       </div>
 

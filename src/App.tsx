@@ -56,6 +56,7 @@ export const App: React.FC = () => {
 
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [hitFlashPoint, setHitFlashPoint] = useState<number | null>(null);
+  const [showSettings, setShowSettings] = useState(false);
 
   const showToast = (msg: string) => {
     setToastMessage(msg);
@@ -479,7 +480,7 @@ export const App: React.FC = () => {
 
   return (
     <div
-      className="min-h-screen flex flex-col items-center p-4 pb-10 font-sans relative"
+      className="h-[100dvh] overflow-hidden flex flex-col items-center p-2.5 gap-2 font-sans relative"
       style={{ background: 'radial-gradient(ellipse at 50% -10%,#2a1710 0%,rgba(18,9,5,0) 55%),#0e0906' }}
     >
       {/* Mobile Portrait Rotation Overlay */}
@@ -501,6 +502,7 @@ export const App: React.FC = () => {
         gameMode={gameState.gameMode}
         onToggleGameMode={handleToggleGameMode}
         onQuickReset={handleQuickReset}
+        onOpenSettings={() => setShowSettings(true)}
         stats={gameState.stats}
       />
 
@@ -518,7 +520,11 @@ export const App: React.FC = () => {
         canRoll={gameState.turnPhase === 'roll' && !(gameState.gameMode === 'ai' && gameState.currentTurn === 'black')}
       />
 
-      <main className="w-full flex flex-col items-center">
+      {/* Flexible area: shrinks the board to whatever height is left, never forces a page scroll */}
+      <div
+        className="w-full flex-1 min-h-0 flex items-center justify-center"
+        style={{ containerType: 'size' }}
+      >
         <Board
           gameState={gameState}
           onPointClick={handlePointClick}
@@ -528,18 +534,20 @@ export const App: React.FC = () => {
           onExecuteMove={handleExecuteDirectMove}
           hitFlashPoint={hitFlashPoint}
         />
+      </div>
 
-        <Controls
-          gameState={gameState}
-          onUndoMove={handleUndoMove}
-          onGetHint={handleGetHint}
-          onOfferDouble={handleOfferDouble}
-          onRespondDouble={handleRespondDouble}
-          onNewGame={handleNewGame}
-          pipWhite={pipWhite}
-          pipBlack={pipBlack}
-        />
-      </main>
+      <Controls
+        gameState={gameState}
+        onUndoMove={handleUndoMove}
+        onGetHint={handleGetHint}
+        onOfferDouble={handleOfferDouble}
+        onRespondDouble={handleRespondDouble}
+        onNewGame={handleNewGame}
+        pipWhite={pipWhite}
+        pipBlack={pipBlack}
+        showSettings={showSettings}
+        onCloseSettings={() => setShowSettings(false)}
+      />
 
       {/* Floating Toast Notification */}
       {toastMessage && (
@@ -547,10 +555,6 @@ export const App: React.FC = () => {
           {toastMessage}
         </div>
       )}
-
-      <footer className="py-2 text-center text-xs text-[#b8a488]/60 font-medium">
-        Backgammon
-      </footer>
     </div>
   );
 };

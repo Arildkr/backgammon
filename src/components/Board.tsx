@@ -236,7 +236,14 @@ export const Board: React.FC<BoardProps> = ({
   const offTargetActive = getTargetMove(activeOrigin, 'off');
 
   return (
-    <div className="w-full max-w-[1180px] relative rounded-[22px] p-4 shadow-[0_30px_60px_-20px_rgba(0,0,0,.7),inset_0_2px_3px_rgba(255,255,255,.08)] border" style={{ background: theme.frame, borderColor: theme.frameBorder }}>
+    <div
+      className="relative rounded-[22px] p-4 shadow-[0_30px_60px_-20px_rgba(0,0,0,.7),inset_0_2px_3px_rgba(255,255,255,.08)] border"
+      style={{
+        background: theme.frame,
+        borderColor: theme.frameBorder,
+        width: 'min(1180px, 100%, calc((100cqh - 32px) * 1.6 + 32px))',
+      }}
+    >
       <div
         className="relative w-full aspect-[16/10] rounded-xl overflow-hidden flex shadow-[inset_0_0_40px_rgba(0,0,0,.6)]"
         style={{ background: theme.surface }}

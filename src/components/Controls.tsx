@@ -16,6 +16,8 @@ interface ControlsProps {
   }) => void;
   pipWhite: number;
   pipBlack: number;
+  showSettings: boolean;
+  onCloseSettings: () => void;
 }
 
 export const Controls: React.FC<ControlsProps> = ({
@@ -27,6 +29,8 @@ export const Controls: React.FC<ControlsProps> = ({
   onNewGame,
   pipWhite,
   pipBlack,
+  showSettings,
+  onCloseSettings,
 }) => {
   const {
     currentTurn,
@@ -41,7 +45,6 @@ export const Controls: React.FC<ControlsProps> = ({
     winType,
   } = gameState;
 
-  const [showSettings, setShowSettings] = useState(false);
   const [selectedStartRule, setSelectedStartRule] = useState<StartRule>(startRule);
   const [selectedGameMode, setSelectedGameMode] = useState<GameMode>(gameMode);
   const [selectedAIDifficulty, setSelectedAIDifficulty] = useState<AIDifficulty>(aiDifficulty);
@@ -56,11 +59,11 @@ export const Controls: React.FC<ControlsProps> = ({
       aiDifficulty: selectedAIDifficulty,
       boardTheme: selectedTheme,
     });
-    setShowSettings(false);
+    onCloseSettings();
   };
 
   return (
-    <div className="w-full max-w-[1180px] flex flex-col gap-2.5 mt-2.5">
+    <div className="w-full max-w-[1180px] flex flex-col gap-2.5">
       {/* Secondary action row */}
       <div className="flex flex-wrap items-center justify-between gap-3 py-2.5 px-4 rounded-[13px] bg-white/[0.03] border border-[#c9a24a]/20">
         <div className="flex items-center gap-3">
@@ -100,14 +103,6 @@ export const Controls: React.FC<ControlsProps> = ({
             title="Doble innsatsen"
           >
             Doble ({doublingCube.value}x)
-          </button>
-
-          <button
-            onClick={() => setShowSettings(true)}
-            className="w-9 h-9 rounded-[10px] bg-white/[0.04] hover:bg-white/[0.08] text-[#e8cd85] border border-[#c9a24a]/25 cursor-pointer flex items-center justify-center"
-            title="Innstillinger og nytt spill"
-          >
-            <Settings className="w-[18px] h-[18px]" />
           </button>
         </div>
       </div>
@@ -152,7 +147,7 @@ export const Controls: React.FC<ControlsProps> = ({
                 <Settings className="w-5 h-5 text-[#e8cd85]" /> Nytt Spill &amp; Innstillinger
               </h3>
               <button
-                onClick={() => setShowSettings(false)}
+                onClick={onCloseSettings}
                 className="text-[#b8a488] hover:text-[#f3e9d8] text-lg font-bold cursor-pointer"
               >
                 ✕

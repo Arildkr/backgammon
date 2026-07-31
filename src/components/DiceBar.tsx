@@ -63,7 +63,7 @@ export const DiceBar: React.FC<DiceBarProps> = ({
   const displayDice = isRolling && dice.length === 0 ? [1, 1] : dice;
 
   return (
-    <div className="w-full max-w-[1180px] flex items-center justify-center gap-4 mb-2.5 py-2.5 px-4.5 rounded-[14px] bg-white/[0.03] border border-[#c9a24a]/20 flex-wrap">
+    <div className="w-full max-w-[1180px] flex items-center justify-center gap-4 py-2 px-4.5 rounded-[14px] bg-white/[0.03] border border-[#c9a24a]/20 flex-wrap">
       <div className="text-[13px] font-bold min-w-[150px]" style={{ color: turnLabelColor }}>
         {turnText}
       </div>

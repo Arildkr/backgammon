@@ -10,7 +10,7 @@ export const TurnLegend: React.FC<TurnLegendProps> = ({ currentTurn, gameOver })
   const active = !gameOver;
 
   return (
-    <div className="w-full max-w-[1180px] flex flex-wrap gap-2.5 mb-2">
+    <div className="w-full max-w-[1180px] flex flex-wrap gap-2.5">
       <div
         className={`flex-1 min-w-[230px] flex items-center gap-2.5 py-2.5 px-4 rounded-[13px] bg-white/[0.03] border border-[#3b82f6]/30 ${
           active && currentTurn === 'black' ? 'animate-turn-glow' : ''
