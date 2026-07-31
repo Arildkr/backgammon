@@ -1,11 +1,9 @@
 import React, { useState } from 'react';
 import type { GameState, StartRule, GameMode, AIDifficulty, BoardTheme } from '../types/backgammon';
-import { Dice } from './Dice';
 import { RotateCcw, Lightbulb, Settings, Trophy } from 'lucide-react';
 
 interface ControlsProps {
   gameState: GameState;
-  onRollDice: () => void;
   onUndoMove: () => void;
   onGetHint: () => void;
   onOfferDouble: () => void;
@@ -22,7 +20,6 @@ interface ControlsProps {
 
 export const Controls: React.FC<ControlsProps> = ({
   gameState,
-  onRollDice,
   onUndoMove,
   onGetHint,
   onOfferDouble,
@@ -33,9 +30,6 @@ export const Controls: React.FC<ControlsProps> = ({
 }) => {
   const {
     currentTurn,
-    dice,
-    remainingDice,
-    isRolling,
     turnPhase,
     turnHistory,
     gameMode,
@@ -66,51 +60,25 @@ export const Controls: React.FC<ControlsProps> = ({
   };
 
   return (
-    <div className="w-full max-w-5xl flex flex-col gap-4 mt-4 select-none">
-      {/* Action Bar */}
-      <div className="flex flex-wrap items-center justify-between gap-3 p-4 rounded-2xl bg-slate-900/90 border border-slate-800 shadow-xl backdrop-blur-md">
-        {/* Player Turn Indicator */}
+    <div className="w-full max-w-[1180px] flex flex-col gap-2.5 mt-2.5">
+      {/* Secondary action row */}
+      <div className="flex flex-wrap items-center justify-between gap-3 py-2.5 px-4 rounded-[13px] bg-white/[0.03] border border-[#c9a24a]/20">
         <div className="flex items-center gap-3">
-          <div
-            className={`w-4 h-4 rounded-full animate-ping ${
-              currentTurn === 'white' ? 'bg-amber-300 shadow-amber-300/50' : 'bg-slate-400 shadow-slate-400/50'
-            }`}
-          />
-          <div className="flex flex-col">
-            <span className="text-xs text-slate-400 font-medium">Nåværende Tur</span>
-            <span className="text-sm sm:text-base font-bold text-slate-100 flex items-center gap-1.5">
-              {currentTurn === 'white' ? (
-                <>
-                  <span className="inline-block w-3 h-3 rounded-full bg-amber-100 border border-amber-300" />
-                  Hvit Spiller
-                </>
-              ) : (
-                <>
-                  <span className="inline-block w-3 h-3 rounded-full bg-slate-800 border border-slate-600" />
-                  {gameMode === 'ai' ? `Datamaskin (${aiDifficulty.toUpperCase()})` : 'Svart Spiller'}
-                </>
-              )}
-            </span>
+          <div className="flex items-center gap-1.5 text-xs font-bold">
+            <span className="w-3 h-3 rounded-full border border-[#a9822f]" style={{ background: 'radial-gradient(circle at 35% 30%,#fdf6e8,#e0c894 70%)' }} />
+            <span className="text-[#d8c096]">Hvit pip: {pipWhite}</span>
+          </div>
+          <div className="flex items-center gap-1.5 text-xs font-bold">
+            <span className="w-3 h-3 rounded-full border border-[#050506]" style={{ background: 'radial-gradient(circle at 35% 30%,#4a4a52,#0a0a0c 70%)' }} />
+            <span className="text-[#8fa9d6]">Svart pip: {pipBlack}</span>
           </div>
         </div>
 
-        {/* Dice Area */}
-        <div className="flex items-center gap-3">
-          <Dice
-            dice={dice}
-            remainingDice={remainingDice}
-            isRolling={isRolling}
-            onRoll={onRollDice}
-            canRoll={turnPhase === 'roll' && !isAITurn}
-          />
-        </div>
-
-        {/* Buttons (Undo, Hint, Settings) */}
         <div className="flex items-center gap-2">
           <button
             onClick={onUndoMove}
             disabled={turnHistory.length === 0 || isAITurn}
-            className="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 disabled:opacity-40 text-slate-200 font-semibold text-xs sm:text-sm flex items-center gap-1.5 border border-slate-700 transition-all cursor-pointer"
+            className="px-3 py-2 rounded-[10px] bg-white/[0.04] hover:bg-white/[0.08] disabled:opacity-40 text-[#f3e9d8] font-bold text-xs flex items-center gap-1.5 border border-[#c9a24a]/25 cursor-pointer"
             title="Angre siste trekk"
           >
             <RotateCcw className="w-4 h-4" /> Angre
@@ -119,7 +87,7 @@ export const Controls: React.FC<ControlsProps> = ({
           <button
             onClick={onGetHint}
             disabled={turnPhase !== 'move' || isAITurn}
-            className="px-3 py-2 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 disabled:opacity-40 text-amber-300 font-semibold text-xs sm:text-sm flex items-center gap-1.5 border border-amber-500/40 transition-all cursor-pointer"
+            className="px-3 py-2 rounded-[10px] bg-[#e8cd85]/15 hover:bg-[#e8cd85]/25 disabled:opacity-40 text-[#e8cd85] font-bold text-xs flex items-center gap-1.5 border border-[#e8cd85]/35 cursor-pointer"
             title="Få et anbefalt trekk"
           >
             <Lightbulb className="w-4 h-4" /> Hint
@@ -128,7 +96,7 @@ export const Controls: React.FC<ControlsProps> = ({
           <button
             onClick={onOfferDouble}
             disabled={turnPhase !== 'roll' || doublingCube.offered || isAITurn}
-            className="px-3 py-2 rounded-xl bg-purple-500/20 hover:bg-purple-500/30 disabled:opacity-40 text-purple-300 font-semibold text-xs sm:text-sm flex items-center gap-1.5 border border-purple-500/40 transition-all cursor-pointer"
+            className="px-3 py-2 rounded-[10px] bg-[#3b82f6]/15 hover:bg-[#3b82f6]/25 disabled:opacity-40 text-[#93c5fd] font-bold text-xs flex items-center gap-1.5 border border-[#3b82f6]/35 cursor-pointer"
             title="Doble innsatsen"
           >
             Doble ({doublingCube.value}x)
@@ -136,56 +104,37 @@ export const Controls: React.FC<ControlsProps> = ({
 
           <button
             onClick={() => setShowSettings(true)}
-            className="p-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition-all cursor-pointer"
+            className="w-9 h-9 rounded-[10px] bg-white/[0.04] hover:bg-white/[0.08] text-[#e8cd85] border border-[#c9a24a]/25 cursor-pointer flex items-center justify-center"
             title="Innstillinger og nytt spill"
           >
-            <Settings className="w-5 h-5" />
+            <Settings className="w-[18px] h-[18px]" />
           </button>
-        </div>
-      </div>
-
-      {/* Pip Count & Advantage Meter */}
-      <div className="grid grid-cols-2 gap-3">
-        <div className="p-3 rounded-xl bg-slate-900/60 border border-slate-800 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="w-3.5 h-3.5 rounded-full bg-amber-100 border border-amber-300" />
-            <span className="text-xs font-semibold text-slate-300">Hvit sin Pip Count:</span>
-          </div>
-          <span className="text-base font-black text-amber-300">{pipWhite}</span>
-        </div>
-
-        <div className="p-3 rounded-xl bg-slate-900/60 border border-slate-800 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="w-3.5 h-3.5 rounded-full bg-slate-800 border border-slate-600" />
-            <span className="text-xs font-semibold text-slate-300">Svart sin Pip Count:</span>
-          </div>
-          <span className="text-base font-black text-slate-100">{pipBlack}</span>
         </div>
       </div>
 
       {/* Doubling Offer Modal */}
       {doublingCube.offered && doublingCube.offeredBy !== currentTurn && (
-        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-fade-in">
-          <div className="bg-slate-900 border-2 border-purple-500/50 p-6 rounded-2xl max-w-md w-full shadow-2xl flex flex-col items-center text-center gap-4">
-            <div className="w-12 h-12 rounded-full bg-purple-500/20 text-purple-400 flex items-center justify-center font-black text-xl border border-purple-500/40">
+        <div className="fixed inset-0 bg-[rgba(10,5,2,.72)] flex items-center justify-center p-4 z-[300]">
+          <div className="bg-gradient-to-br from-[#2a1710] to-[#1a0d05] border border-[#3b82f6]/40 p-6 rounded-2xl max-w-md w-full shadow-2xl flex flex-col items-center text-center gap-4 animate-modal-in">
+            <div className="w-12 h-12 rounded-full bg-[#3b82f6]/20 text-[#93c5fd] flex items-center justify-center font-black text-xl border border-[#3b82f6]/40">
               {doublingCube.value * 2}x
             </div>
-            <h3 className="text-xl font-bold text-slate-100">
+            <h3 className="text-xl font-bold text-[#f3e9d8] m-0">
               {doublingCube.offeredBy === 'white' ? 'Hvit' : 'Svart'} tilbyr dobling!
             </h3>
-            <p className="text-sm text-slate-300">
+            <p className="text-sm text-[#d8c8ac] m-0">
               Innsatsen økes til {doublingCube.value * 2}x. Godtar du eller gir du opp turen?
             </p>
             <div className="flex items-center gap-3 w-full mt-2">
               <button
                 onClick={() => onRespondDouble(true)}
-                className="flex-1 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-sm shadow-lg cursor-pointer"
+                className="flex-1 py-2.5 rounded-xl bg-[#3b82f6] hover:bg-[#60a5fa] text-white font-bold text-sm cursor-pointer"
               >
                 Godta ({doublingCube.value * 2}x)
               </button>
               <button
                 onClick={() => onRespondDouble(false)}
-                className="flex-1 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold text-sm shadow-lg cursor-pointer"
+                className="flex-1 py-2.5 rounded-xl bg-[#e2574c] hover:bg-[#ec7a70] text-white font-bold text-sm cursor-pointer"
               >
                 Gi opp turen
               </button>
@@ -196,46 +145,45 @@ export const Controls: React.FC<ControlsProps> = ({
 
       {/* Settings / New Game Modal */}
       {showSettings && (
-        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-          <div className="bg-slate-900 border border-slate-800 p-6 rounded-2xl max-w-lg w-full shadow-2xl flex flex-col gap-5">
-            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-              <h3 className="text-xl font-bold text-slate-100 flex items-center gap-2">
-                <Settings className="w-5 h-5 text-amber-400" /> Nytt Spill & Innstillinger
+        <div className="fixed inset-0 bg-[rgba(10,5,2,.72)] flex items-center justify-center p-4 z-[300]">
+          <div className="bg-[#1a0d05] border border-[#c9a24a]/40 p-6 rounded-2xl max-w-lg w-full shadow-2xl flex flex-col gap-5 animate-modal-in">
+            <div className="flex items-center justify-between border-b border-[#c9a24a]/20 pb-3">
+              <h3 className="text-xl font-bold text-[#f3e9d8] flex items-center gap-2 m-0">
+                <Settings className="w-5 h-5 text-[#e8cd85]" /> Nytt Spill &amp; Innstillinger
               </h3>
               <button
                 onClick={() => setShowSettings(false)}
-                className="text-slate-400 hover:text-slate-100 text-lg font-bold"
+                className="text-[#b8a488] hover:text-[#f3e9d8] text-lg font-bold cursor-pointer"
               >
                 ✕
               </button>
             </div>
 
-            {/* Start Rule Selection */}
             <div className="flex flex-col gap-2">
-              <label className="text-xs font-bold text-amber-400 uppercase tracking-wider">
+              <label className="text-xs font-bold text-[#e8cd85] uppercase tracking-wider">
                 Start-konfigurasjon (Regel)
               </label>
               <div className="grid grid-cols-2 gap-3">
                 <button
                   type="button"
                   onClick={() => setSelectedStartRule('inne')}
-                  className={`p-3 rounded-xl border text-left transition-all cursor-pointer ${
+                  className={`p-3 rounded-xl border text-left cursor-pointer ${
                     selectedStartRule === 'inne'
-                      ? 'bg-amber-500/20 border-amber-400 text-amber-200'
-                      : 'bg-slate-800/50 border-slate-700 text-slate-400 hover:bg-slate-800'
+                      ? 'bg-[#e8cd85]/15 border-[#e8cd85]/50 text-[#e8cd85]'
+                      : 'bg-white/[0.03] border-[#c9a24a]/20 text-[#b8a488]'
                   }`}
                 >
                   <div className="font-bold text-sm">Begynne Inne</div>
-                  <div className="text-[11px] opacity-80 mt-1">Standard backgammon med 15 brikker plasert på brettet.</div>
+                  <div className="text-[11px] opacity-80 mt-1">Standard backgammon med 15 brikker plassert på brettet.</div>
                 </button>
 
                 <button
                   type="button"
                   onClick={() => setSelectedStartRule('ute')}
-                  className={`p-3 rounded-xl border text-left transition-all cursor-pointer ${
+                  className={`p-3 rounded-xl border text-left cursor-pointer ${
                     selectedStartRule === 'ute'
-                      ? 'bg-amber-500/20 border-amber-400 text-amber-200'
-                      : 'bg-slate-800/50 border-slate-700 text-slate-400 hover:bg-slate-800'
+                      ? 'bg-[#e8cd85]/15 border-[#e8cd85]/50 text-[#e8cd85]'
+                      : 'bg-white/[0.03] border-[#c9a24a]/20 text-[#b8a488]'
                   }`}
                 >
                   <div className="font-bold text-sm">Begynne Ute</div>
@@ -244,31 +192,28 @@ export const Controls: React.FC<ControlsProps> = ({
               </div>
             </div>
 
-            {/* Game Mode Selection */}
             <div className="flex flex-col gap-2">
-              <label className="text-xs font-bold text-amber-400 uppercase tracking-wider">
-                Spillemodus
-              </label>
+              <label className="text-xs font-bold text-[#e8cd85] uppercase tracking-wider">Spillemodus</label>
               <div className="grid grid-cols-2 gap-3">
                 <button
                   type="button"
                   onClick={() => setSelectedGameMode('pvp')}
-                  className={`p-3 rounded-xl border text-center font-bold text-sm transition-all cursor-pointer ${
+                  className={`p-3 rounded-xl border text-center font-bold text-sm cursor-pointer ${
                     selectedGameMode === 'pvp'
-                      ? 'bg-amber-500/20 border-amber-400 text-amber-200'
-                      : 'bg-slate-800/50 border-slate-700 text-slate-400'
+                      ? 'bg-[#e8cd85]/15 border-[#e8cd85]/50 text-[#e8cd85]'
+                      : 'bg-white/[0.03] border-[#c9a24a]/20 text-[#b8a488]'
                   }`}
                 >
-                  👥 1 mot 1 (Pass & Play)
+                  👥 1 mot 1 (Pass &amp; Play)
                 </button>
 
                 <button
                   type="button"
                   onClick={() => setSelectedGameMode('ai')}
-                  className={`p-3 rounded-xl border text-center font-bold text-sm transition-all cursor-pointer ${
+                  className={`p-3 rounded-xl border text-center font-bold text-sm cursor-pointer ${
                     selectedGameMode === 'ai'
-                      ? 'bg-amber-500/20 border-amber-400 text-amber-200'
-                      : 'bg-slate-800/50 border-slate-700 text-slate-400'
+                      ? 'bg-[#e8cd85]/15 border-[#e8cd85]/50 text-[#e8cd85]'
+                      : 'bg-white/[0.03] border-[#c9a24a]/20 text-[#b8a488]'
                   }`}
                 >
                   🤖 Mot Datamaskin
@@ -276,10 +221,9 @@ export const Controls: React.FC<ControlsProps> = ({
               </div>
             </div>
 
-            {/* AI Difficulty */}
             {selectedGameMode === 'ai' && (
               <div className="flex flex-col gap-2">
-                <label className="text-xs font-bold text-amber-400 uppercase tracking-wider">
+                <label className="text-xs font-bold text-[#e8cd85] uppercase tracking-wider">
                   Vanskelighetsgrad (AI)
                 </label>
                 <div className="grid grid-cols-3 gap-2">
@@ -288,10 +232,10 @@ export const Controls: React.FC<ControlsProps> = ({
                       key={diff}
                       type="button"
                       onClick={() => setSelectedAIDifficulty(diff)}
-                      className={`py-2 rounded-lg border text-xs font-bold capitalize transition-all cursor-pointer ${
+                      className={`py-2 rounded-lg border text-xs font-bold capitalize cursor-pointer ${
                         selectedAIDifficulty === diff
-                          ? 'bg-amber-500/20 border-amber-400 text-amber-200'
-                          : 'bg-slate-800/50 border-slate-700 text-slate-400'
+                          ? 'bg-[#e8cd85]/15 border-[#e8cd85]/50 text-[#e8cd85]'
+                          : 'bg-white/[0.03] border-[#c9a24a]/20 text-[#b8a488]'
                       }`}
                     >
                       {diff === 'easy' ? 'Enkel' : diff === 'medium' ? 'Medium' : 'Mester'}
@@ -301,21 +245,18 @@ export const Controls: React.FC<ControlsProps> = ({
               </div>
             )}
 
-            {/* Theme Selection */}
             <div className="flex flex-col gap-2">
-              <label className="text-xs font-bold text-amber-400 uppercase tracking-wider">
-                Brett-Tema
-              </label>
+              <label className="text-xs font-bold text-[#e8cd85] uppercase tracking-wider">Brett-Tema</label>
               <div className="grid grid-cols-3 gap-2">
                 {(['mahogany', 'leather', 'cyber'] as BoardTheme[]).map((theme) => (
                   <button
                     key={theme}
                     type="button"
                     onClick={() => setSelectedTheme(theme)}
-                    className={`py-2 rounded-lg border text-xs font-bold capitalize transition-all cursor-pointer ${
+                    className={`py-2 rounded-lg border text-xs font-bold capitalize cursor-pointer ${
                       selectedTheme === theme
-                        ? 'bg-amber-500/20 border-amber-400 text-amber-200'
-                        : 'bg-slate-800/50 border-slate-700 text-slate-400'
+                        ? 'bg-[#e8cd85]/15 border-[#e8cd85]/50 text-[#e8cd85]'
+                        : 'bg-white/[0.03] border-[#c9a24a]/20 text-[#b8a488]'
                     }`}
                   >
                     {theme === 'mahogany' ? '🪵 Mahogni' : theme === 'leather' ? '🖤 Skinn' : '⚡ Cyber'}
@@ -324,10 +265,9 @@ export const Controls: React.FC<ControlsProps> = ({
               </div>
             </div>
 
-            {/* Start Button */}
             <button
               onClick={handleStartNewGame}
-              className="mt-2 py-3 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-extrabold text-base shadow-lg shadow-amber-500/20 transition-all cursor-pointer"
+              className="mt-2 py-3 rounded-xl bg-gradient-to-br from-[#e8cd85] to-[#8a6a24] text-[#2a1710] font-extrabold text-base cursor-pointer"
             >
               Start Nytt Spill
             </button>
@@ -337,25 +277,25 @@ export const Controls: React.FC<ControlsProps> = ({
 
       {/* Winner Screen Modal */}
       {winner && (
-        <div className="fixed inset-0 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4 z-50 animate-fade-in">
-          <div className="bg-slate-900 border-2 border-amber-500/60 p-8 rounded-3xl max-w-md w-full shadow-2xl flex flex-col items-center text-center gap-5">
-            <div className="w-20 h-20 rounded-full bg-amber-500/20 text-amber-400 flex items-center justify-center border-2 border-amber-400 shadow-lg animate-bounce">
-              <Trophy className="w-10 h-10" />
-            </div>
-            <div>
-              <h2 className="text-3xl font-black text-amber-300">
-                {winner === 'white' ? 'Hvit Spiller Vant!' : 'Svart Spiller Vant!'}
-              </h2>
-              <p className="text-sm font-semibold text-slate-300 mt-1 uppercase tracking-wider">
-                {winType === 'backgammon' ? '🔥 BACKGAMMON SEIER (3x Poeng)!' : winType === 'gammon' ? '⚡ GAMMON SEIER (2x Poeng)!' : 'Standard Seier (1x Poeng)'}
-              </p>
-            </div>
+        <div className="fixed inset-0 bg-[rgba(10,5,2,.72)] flex items-center justify-center p-4 z-[300]">
+          <div className="relative bg-gradient-to-br from-[#2a1710] to-[#1a0d05] border border-[#c9a24a]/40 p-9 rounded-[20px] max-w-md w-full shadow-2xl flex flex-col items-center text-center gap-3 animate-modal-in">
+            <Trophy className="w-11 h-11 text-[#e8cd85]" />
+            <h2 className="text-[28px] m-0 text-[#e8cd85]">
+              {winner === 'white' ? 'Hvit vinner!' : 'Svart vinner!'}
+            </h2>
+            <p className="text-[13px] text-[#b8a488] m-0 uppercase tracking-wider">
+              {winType === 'backgammon'
+                ? '🔥 Backgammon-seier (3x poeng)'
+                : winType === 'gammon'
+                ? '⚡ Gammon-seier (2x poeng)'
+                : 'Standard seier (1x poeng)'}
+            </p>
 
             <button
               onClick={() => onNewGame({ startRule, gameMode, aiDifficulty, boardTheme })}
-              className="w-full py-3.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-base shadow-xl shadow-amber-500/30 transition-all transform hover:-translate-y-0.5 cursor-pointer"
+              className="mt-3 py-3 px-7 rounded-xl bg-gradient-to-br from-[#e8cd85] to-[#8a6a24] text-[#2a1710] font-extrabold text-sm cursor-pointer"
             >
-              Spill Igjen
+              Nytt parti
             </button>
           </div>
         </div>

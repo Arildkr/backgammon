@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import type { GameState, Player } from '../types/backgammon';
+import type { GameState, Player, BoardTheme } from '../types/backgammon';
 
 interface BoardProps {
   gameState: GameState;
@@ -11,6 +11,54 @@ interface BoardProps {
   hitFlashPoint: number | null;
 }
 
+const THEMES: Record<
+  BoardTheme,
+  {
+    frame: string;
+    frameBorder: string;
+    surface: string;
+    triDark: string;
+    triLight: string;
+    homeWhite: string;
+    homeBlack: string;
+    numberColor: string;
+  }
+> = {
+  mahogany: {
+    frame: 'linear-gradient(160deg,#4a2c18,#2a1710 55%,#1a0d05)',
+    frameBorder: 'rgba(201,162,74,.28)',
+    surface: '#1a0d05',
+    triDark: '#5a3a22',
+    triLight: '#7a5232',
+    homeWhite: 'rgba(201,162,74,.07)',
+    homeBlack: 'rgba(59,130,246,.07)',
+    numberColor: 'rgba(243,233,216,.55)',
+  },
+  leather: {
+    frame: 'linear-gradient(160deg,#2e2e33,#18181b 55%,#0c0c0e)',
+    frameBorder: 'rgba(148,163,184,.28)',
+    surface: '#0f172a',
+    triDark: '#334155',
+    triLight: '#475569',
+    homeWhite: 'rgba(148,163,184,.07)',
+    homeBlack: 'rgba(59,130,246,.07)',
+    numberColor: 'rgba(226,232,240,.55)',
+  },
+  cyber: {
+    frame: 'linear-gradient(160deg,#0c1425,#090d16 55%,#03050a)',
+    frameBorder: 'rgba(2,132,199,.35)',
+    surface: '#050b14',
+    triDark: '#1e1b4b',
+    triLight: '#0284c7',
+    homeWhite: 'rgba(2,132,199,.10)',
+    homeBlack: 'rgba(2,132,199,.10)',
+    numberColor: 'rgba(186,230,253,.6)',
+  },
+};
+
+const CHECKER_WHITE_BG = 'radial-gradient(circle at 35% 30%,#fdf6e8,#e0c894 70%)';
+const CHECKER_BLACK_BG = 'radial-gradient(circle at 35% 30%,#4a4a52,#0a0a0c 70%)';
+
 export const Board: React.FC<BoardProps> = ({
   gameState,
   onPointClick,
@@ -20,30 +68,16 @@ export const Board: React.FC<BoardProps> = ({
   onExecuteMove,
   hitFlashPoint,
 }) => {
-  const {
-    points,
-    bar,
-    off,
-    reserve,
-    currentTurn,
-    selectedOrigin,
-    validMoves,
-    boardTheme,
-    startRule,
-  } = gameState;
+  const { points, bar, off, reserve, currentTurn, selectedOrigin, validMoves, boardTheme, startRule } =
+    gameState;
 
-  // Drag and Drop state
   const [dragOrigin, setDragOrigin] = useState<number | 'bar' | 'reserve' | null>(null);
   const [dragPos, setDragPos] = useState<{ x: number; y: number } | null>(null);
 
-  // Global Pointer Listeners for Drag and Drop
   useEffect(() => {
     const handlePointerMove = (e: PointerEvent) => {
-      if (dragOrigin !== null) {
-        setDragPos({ x: e.clientX, y: e.clientY });
-      }
+      if (dragOrigin !== null) setDragPos({ x: e.clientX, y: e.clientY });
     };
-
     const handlePointerUp = (e: PointerEvent) => {
       if (dragOrigin !== null) {
         const elem = document.elementFromPoint(e.clientX, e.clientY);
@@ -54,16 +88,13 @@ export const Board: React.FC<BoardProps> = ({
             onExecuteMove(dragOrigin, 'off');
           } else if (targetAttr) {
             const targetPoint = parseInt(targetAttr, 10);
-            if (!isNaN(targetPoint)) {
-              onExecuteMove(dragOrigin, targetPoint as any);
-            }
+            if (!isNaN(targetPoint)) onExecuteMove(dragOrigin, targetPoint);
           }
         }
         setDragOrigin(null);
         setDragPos(null);
       }
     };
-
     if (dragOrigin !== null) {
       window.addEventListener('pointermove', handlePointerMove);
       window.addEventListener('pointerup', handlePointerUp);
@@ -74,41 +105,13 @@ export const Board: React.FC<BoardProps> = ({
     };
   }, [dragOrigin, onExecuteMove]);
 
-  // Theme styling definitions
-  const themeStyles = {
-    mahogany: {
-      boardBg: 'bg-[#2a1708] border-[#4a2b13]',
-      feltBg: 'bg-[#1a2e22]',
-      woodFrame: 'border-[#5c3417] bg-[#3a1e0b]',
-      pointLight: 'fill-[#d9ab7e]',
-      pointDark: 'fill-[#6b3e26]',
-      text: 'text-amber-200/90',
-    },
-    leather: {
-      boardBg: 'bg-[#18181b] border-[#27272a]',
-      feltBg: 'bg-[#0f172a]',
-      woodFrame: 'border-[#3f3f46] bg-[#18181b]',
-      pointLight: 'fill-[#94a3b8]',
-      pointDark: 'fill-[#334155]',
-      text: 'text-slate-300',
-    },
-    cyber: {
-      boardBg: 'bg-[#090d16] border-[#1e293b]',
-      feltBg: 'bg-[#050b14]',
-      woodFrame: 'border-[#0284c7] bg-[#0c1425]',
-      pointLight: 'fill-[#0284c7]',
-      pointDark: 'fill-[#1e1b4b]',
-      text: 'text-cyan-300',
-    },
-  }[boardTheme];
+  const theme = THEMES[boardTheme];
 
-  const isSelected = (origin: number | 'bar' | 'reserve') => selectedOrigin === origin;
-
-  const getTargetMove = (to: number | 'off') => {
-    if (selectedOrigin === null && dragOrigin === null) return null;
-    const origin = selectedOrigin !== null ? selectedOrigin : dragOrigin;
-    return validMoves.find((m) => m.from === origin && m.to === to) || null;
+  const getTargetMove = (from: number | 'bar' | 'reserve' | null, to: number | 'off') => {
+    if (from === null) return null;
+    return validMoves.find((m) => m.from === from && m.to === to) || null;
   };
+  const activeOrigin = selectedOrigin !== null ? selectedOrigin : dragOrigin;
 
   const handlePointerDownOrigin = (origin: number | 'bar' | 'reserve', e: React.PointerEvent) => {
     const hasValidMoves = validMoves.some((m) => m.from === origin);
@@ -118,383 +121,269 @@ export const Board: React.FC<BoardProps> = ({
     }
   };
 
-  const renderCheckers = (checkers: Player[], origin: number | 'bar' | 'reserve') => {
-    if (!checkers || checkers.length === 0) return null;
-
+  const renderChips = (checkers: Player[]) => {
     const count = checkers.length;
+    if (count === 0) return null;
     const player = checkers[0];
-    const isWhite = player === 'white';
-    const isBeingDragged = dragOrigin === origin;
-
+    const maxShow = 4;
+    const overflow = count > maxShow;
+    const shown = overflow ? maxShow - 1 : count;
     return (
-      <div
-        onPointerDown={(e) => handlePointerDownOrigin(origin, e)}
-        className={`relative flex flex-col items-center justify-center w-full h-full cursor-grab active:cursor-grabbing ${
-          isBeingDragged ? 'opacity-40' : ''
-        }`}
-      >
-        <div className="relative flex flex-col items-center">
-          {Array.from({ length: Math.min(count, 4) }).map((_, i) => (
-            <div
-              key={i}
-              className={`w-7 h-7 sm:w-9 sm:h-9 md:w-11 md:h-11 rounded-full shadow-lg border-2 transition-all transform ${
-                isWhite
-                  ? 'bg-gradient-to-br from-amber-50 via-amber-100 to-amber-200 border-amber-300 shadow-amber-950/40 text-amber-950'
-                  : 'bg-gradient-to-br from-slate-800 via-slate-900 to-slate-950 border-slate-700 shadow-slate-950/80 text-amber-100'
-              } ${i > 0 ? '-mt-4 sm:-mt-5 md:-mt-6' : ''}`}
-            >
-              <div
-                className={`w-full h-full rounded-full flex items-center justify-center border ${
-                  isWhite ? 'border-amber-200/60' : 'border-slate-800/80'
-                }`}
-              >
-                <div
-                  className={`w-3 h-3 sm:w-4 sm:h-4 rounded-full border ${
-                    isWhite ? 'border-amber-400/40 bg-amber-200/50' : 'border-slate-700 bg-slate-800/50'
-                  }`}
-                />
-              </div>
-            </div>
-          ))}
-
-          {count > 4 && (
-            <div className="mt-1 bg-amber-500 text-slate-950 font-black text-[10px] sm:text-xs px-2 py-0.5 rounded-full shadow-lg border border-amber-300">
-              ×{count}
-            </div>
-          )}
-        </div>
-      </div>
+      <>
+        {Array.from({ length: shown }).map((_, i) => (
+          <div
+            key={i}
+            className="w-[80%] max-w-8 aspect-square rounded-full -mt-1.5 animate-chip-drop shadow-[0_3px_6px_rgba(0,0,0,.5),inset_0_1px_1px_rgba(255,255,255,.4)]"
+            style={{
+              background: player === 'white' ? CHECKER_WHITE_BG : CHECKER_BLACK_BG,
+              border: `2px solid ${player === 'white' ? '#a9822f' : '#050506'}`,
+            }}
+          />
+        ))}
+        {overflow && (
+          <div className="mt-0.5 bg-[#e8cd85] text-[#2a1710] text-[9px] font-extrabold py-px px-1.5 rounded-lg">
+            ×{count}
+          </div>
+        )}
+      </>
     );
   };
 
-  const renderPointTriangle = (pointIndex: number, isTop: boolean) => {
-    const isEven = pointIndex % 2 === 0;
-    const colorClass = isEven ? themeStyles.pointDark : themeStyles.pointLight;
-    const selected = isSelected(pointIndex);
-    const targetMove = getTargetMove(pointIndex);
-    const pointCheckers = points[pointIndex] || [];
-    const isHitFlashed = hitFlashPoint === pointIndex;
-
-    const isWhiteHome = pointIndex >= 1 && pointIndex <= 6;
-    const isBlackHome = pointIndex >= 19 && pointIndex <= 24;
-
-    const startTag =
-      pointIndex === 24
-        ? 'HVIT START'
-        : pointIndex === 1
-        ? 'SVART START'
-        : '';
+  const renderPoint = (pointIndex: number, isTop: boolean) => {
+    const checkers = points[pointIndex] || [];
+    const isSel = activeOrigin === pointIndex;
+    const targetMove = getTargetMove(activeOrigin, pointIndex);
+    const isHit = hitFlashPoint === pointIndex;
+    const dark = pointIndex % 2 === 0;
+    const startTag = pointIndex === 24 ? 'HVIT START' : pointIndex === 1 ? 'SVART START' : '';
+    const startTagColor = pointIndex === 24 ? '#e8cd85' : '#93c5fd';
+    const homeTint = pointIndex >= 19 ? theme.homeBlack : pointIndex <= 6 ? theme.homeWhite : 'transparent';
 
     return (
       <div
         key={pointIndex}
         data-drop-target={pointIndex}
         onClick={() => onPointClick(pointIndex)}
-        className={`relative flex-1 h-full flex flex-col justify-${
-          isTop ? 'start' : 'end'
-        } items-center cursor-pointer group transition-all ${
-          isWhiteHome && !isTop
-            ? 'bg-amber-500/10 border-x border-amber-500/20'
-            : isBlackHome && isTop
-            ? 'bg-purple-500/10 border-x border-purple-500/20'
-            : ''
+        onPointerDown={(e) => handlePointerDownOrigin(pointIndex, e)}
+        className={`flex-1 h-full relative cursor-pointer flex flex-col ${
+          isTop ? 'justify-start' : 'justify-end'
         }`}
+        style={{ background: homeTint }}
       >
-        {/* SVG Triangle */}
-        <svg
-          className="absolute inset-0 w-full h-full pointer-events-none drop-shadow"
-          viewBox="0 0 100 300"
-          preserveAspectRatio="none"
+        <div
+          className="absolute inset-0 opacity-90"
+          style={{
+            clipPath: isTop ? 'polygon(8% 0,92% 0,50% 88%)' : 'polygon(50% 12%,92% 100%,8% 100%)',
+            background: dark ? theme.triDark : theme.triLight,
+          }}
+        />
+        <span
+          className={`relative z-[2] text-center text-[10px] font-bold ${isTop ? 'mt-[5px]' : 'mb-[5px]'}`}
+          style={{ color: theme.numberColor }}
         >
-          <polygon
-            points={isTop ? '0,0 100,0 50,280' : '0,300 100,300 50,20'}
-            className={`${colorClass} transition-opacity ${
-              targetMove ? 'opacity-95' : 'opacity-80 group-hover:opacity-100'
-            }`}
-          />
-        </svg>
+          {pointIndex}
+        </span>
 
-        {/* Hit Flash Red Effect */}
-        {isHitFlashed && (
-          <div className="absolute inset-0 bg-red-600/60 rounded animate-ping pointer-events-none z-30" />
-        )}
-
-        {/* Selected Highlight Glow */}
-        {selected && (
-          <div className="absolute inset-0 bg-amber-400/30 border-2 border-amber-400 rounded pointer-events-none animate-pulse z-10" />
-        )}
-
-        {/* Start Tag Badge */}
         {startTag && (
           <div
-            className={`absolute ${
-              isTop ? 'top-6' : 'bottom-6'
-            } text-[7px] sm:text-[9px] font-black tracking-widest px-1.5 py-0.5 rounded bg-slate-950/80 border z-20 ${
-              pointIndex === 24
-                ? 'text-amber-300 border-amber-400/50'
-                : 'text-purple-300 border-purple-400/50'
-            }`}
+            className={`absolute ${isTop ? 'top-0.5' : 'bottom-0.5'} right-0.5 text-[6.5px] font-extrabold tracking-wide bg-black/40 py-px px-1 rounded z-[3]`}
+            style={{ color: startTagColor }}
           >
             {startTag}
           </div>
         )}
 
-        {/* Target Destination Indicator */}
+        {isSel && (
+          <div className="absolute inset-0.5 border-2 border-[#e8cd85] rounded-[5px] z-[3] shadow-[0_0_12px_rgba(232,205,133,.5)] pointer-events-none" />
+        )}
+
+        {isHit && (
+          <div
+            className="absolute inset-0 z-[4] pointer-events-none animate-hit-flash"
+            style={{ background: 'radial-gradient(circle,#e2574c,transparent 70%)' }}
+          />
+        )}
+
         {targetMove && (
-          <div className="absolute inset-x-0 my-auto w-7 h-7 sm:w-9 sm:h-9 rounded-full bg-emerald-500 border-2 border-emerald-200 shadow-xl shadow-emerald-500/60 flex flex-col items-center justify-center animate-bounce z-30 pointer-events-none">
-            <span className="text-white text-[11px] font-black leading-none">
-              +{targetMove.dieValue}
-            </span>
+          <div
+            className="absolute left-1/2 w-7 h-7 rounded-full border-2 border-[#a7f3d0] flex items-center justify-center z-[5] pointer-events-none"
+            style={{
+              top: isTop ? '30%' : '70%',
+              transform: 'translate(-50%,-50%)',
+              background: '#34d399',
+              boxShadow: '0 0 14px rgba(52,211,153,.7)',
+              animation: 'targetPulse 1s ease-in-out infinite',
+            }}
+          >
+            <span className="text-[10px] font-extrabold text-[#04241a]">{targetMove.dieValue}</span>
           </div>
         )}
 
-        {/* Number Label & Direction Arrow */}
         <div
-          className={`absolute ${
-            isTop ? 'top-1' : 'bottom-1'
-          } flex items-center gap-0.5 z-20 opacity-80 group-hover:opacity-100`}
+          className={`z-[2] flex flex-col items-center relative ${
+            isTop ? 'justify-start pt-4' : 'justify-end pb-4 flex-col-reverse'
+          }`}
         >
-          <span className={`text-[10px] sm:text-xs font-bold ${themeStyles.text}`}>
-            {pointIndex}
-          </span>
-          <span className="text-[9px] text-amber-400/70 font-mono">
-            {isTop ? '➔' : '◄'}
-          </span>
-        </div>
-
-        {/* Checkers Stack */}
-        <div className={`z-10 py-1 ${isTop ? 'pt-5' : 'pb-5'}`}>
-          {renderCheckers(pointCheckers, pointIndex)}
+          {renderChips(checkers)}
         </div>
       </div>
     );
   };
 
-  const whiteOffTarget = getTargetMove('off') && currentTurn === 'white';
-  const blackOffTarget = getTargetMove('off') && currentTurn === 'black';
+  const isSelBar = activeOrigin === 'bar';
+  const isSelReserveWhite = activeOrigin === 'reserve' && currentTurn === 'white';
+  const isSelReserveBlack = activeOrigin === 'reserve' && currentTurn === 'black';
+  const offTargetActive = getTargetMove(activeOrigin, 'off');
 
   return (
-    <div className="w-full max-w-5xl flex flex-col items-center gap-1.5 select-none relative">
-      {/* Top Banner: Player Movement Directions */}
-      <div className="w-full flex items-center justify-between px-4 py-1.5 rounded-xl bg-slate-900/90 border border-slate-800 text-xs font-bold text-slate-300">
-        <div className="flex items-center gap-2">
-          <span className="w-2.5 h-2.5 rounded-full bg-slate-800 border border-slate-600" />
-          <span className="text-slate-300">Svart Retning:</span>
-          <span className="text-slate-400 font-normal">Felt 1 ➔ 24 (Hjemmefelt: 19-24 Øverst Høyre)</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <span className="text-amber-400 font-normal">Felt 24 ➔ 1 (Hjemmefelt: 1-6 Nederst Høyre)</span>
-          <span className="text-amber-300">:Hvit Retning</span>
-          <span className="w-2.5 h-2.5 rounded-full bg-amber-100 border border-amber-300" />
-        </div>
-      </div>
-
-      {/* Main Board Container */}
+    <div className="w-full max-w-[1180px] relative rounded-[22px] p-4 shadow-[0_30px_60px_-20px_rgba(0,0,0,.7),inset_0_2px_3px_rgba(255,255,255,.08)] border" style={{ background: theme.frame, borderColor: theme.frameBorder }}>
       <div
-        className={`relative w-full aspect-[16/10] sm:aspect-[16/9] p-3 sm:p-5 rounded-2xl border-4 sm:border-8 shadow-2xl ${themeStyles.boardBg} ${themeStyles.woodFrame} flex flex-col justify-between overflow-hidden`}
+        className="relative w-full aspect-[16/10] rounded-xl overflow-hidden flex shadow-[inset_0_0_40px_rgba(0,0,0,.6)]"
+        style={{ background: theme.surface }}
       >
-        {/* Top Section: Points 13-18 (Left) | BAR | Points 19-24 (Right, Black Home) */}
-        <div className={`relative flex-1 flex rounded-t-xl ${themeStyles.feltBg} border border-amber-900/30 overflow-hidden`}>
-          {/* Reserve Tray Left Top (White Reserve for Begynne ute) */}
-          {startRule === 'ute' && (
+        {/* Reserve column (begynne ute) */}
+        {startRule === 'ute' && (
+          <div className="w-[8.5%] min-w-11 bg-gradient-to-b from-[#1a0d05] to-[#241407] border-x-2 border-[#c9a24a]/30 flex flex-col items-center relative z-10">
             <div
+              data-drop-target="reserve-noop"
               onClick={() => onReserveClick('white')}
-              className={`w-12 sm:w-16 h-full border-r-2 border-amber-900/50 flex flex-col items-center justify-center p-1 cursor-pointer transition-all ${
-                isSelected('reserve') && currentTurn === 'white'
-                  ? 'bg-amber-500/30 ring-2 ring-amber-400'
-                  : 'hover:bg-white/5'
+              onPointerDown={(e) => reserve.white > 0 && handlePointerDownOrigin('reserve', e)}
+              className={`flex-1 w-full flex flex-col items-center justify-center gap-1 cursor-pointer ${
+                isSelReserveWhite ? 'shadow-[0_0_0_2px_#e8cd85_inset] rounded-[10px]' : ''
               }`}
-              title="Hvit Reserve (Klikk eller dra inn)"
             >
-              <span className="text-[9px] sm:text-[10px] text-amber-200 font-bold mb-1">Reserve</span>
-              {reserve.white > 0 ? (
+              {reserve.white > 0 && (
                 <div
-                  onPointerDown={(e) => handlePointerDownOrigin('reserve', e)}
-                  className="w-8 h-8 rounded-full bg-gradient-to-br from-amber-50 to-amber-200 text-amber-950 font-bold flex items-center justify-center text-xs shadow border border-amber-300 animate-pulse cursor-grab active:cursor-grabbing"
+                  className="w-[30px] h-[30px] rounded-full border-2 flex items-center justify-center font-extrabold text-xs animate-chip-drop shadow-[0_3px_7px_rgba(0,0,0,.5)]"
+                  style={{ background: CHECKER_WHITE_BG, borderColor: '#a9822f', color: '#4a2c18' }}
                 >
                   {reserve.white}
                 </div>
-              ) : (
-                <span className="text-[9px] text-amber-400/40">Tom</span>
               )}
+              <span className="text-[8px] font-extrabold tracking-widest uppercase text-[#e8cd85]/55">
+                Reserve
+              </span>
             </div>
-          )}
-
-          {/* Top Left Quadrant (Points 13 to 18) - Ytre felt */}
-          <div className="flex-1 flex h-full relative">
-            <span className="absolute top-1 left-2 text-[9px] font-bold text-amber-200/40 uppercase tracking-widest pointer-events-none">
-              Ytre Felt (13-18)
-            </span>
-            {[13, 14, 15, 16, 17, 18].map((p) => renderPointTriangle(p, true))}
-          </div>
-
-          {/* Center BAR */}
-          <div
-            className={`w-12 sm:w-16 md:w-20 h-full bg-amber-950/90 border-x-2 border-amber-900/70 flex flex-col items-center justify-around py-2 z-20`}
-          >
-            <span className="text-[10px] sm:text-xs font-black tracking-widest text-amber-400/60 uppercase">
-              BAR
-            </span>
-
-            {/* White on Bar */}
             <div
-              onClick={() => onBarClick('white')}
-              className={`cursor-pointer p-1 rounded-xl transition-all ${
-                isSelected('bar') && currentTurn === 'white'
-                  ? 'bg-amber-400/40 ring-2 ring-amber-400 animate-pulse'
-                  : ''
-              }`}
-            >
-              {bar.white > 0 && (
-                <div
-                  onPointerDown={(e) => handlePointerDownOrigin('bar', e)}
-                  className="relative flex flex-col items-center cursor-grab active:cursor-grabbing"
-                >
-                  <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-gradient-to-br from-amber-50 to-amber-200 border-2 border-amber-300 shadow-lg flex items-center justify-center font-bold text-amber-950 text-xs">
-                    {bar.white}
-                  </div>
-                  <span className="text-[9px] text-amber-200 font-semibold mt-0.5">Hvit</span>
-                </div>
-              )}
-            </div>
-
-            {/* Black on Bar */}
-            <div
-              onClick={() => onBarClick('black')}
-              className={`cursor-pointer p-1 rounded-xl transition-all ${
-                isSelected('bar') && currentTurn === 'black'
-                  ? 'bg-amber-400/40 ring-2 ring-amber-400 animate-pulse'
-                  : ''
-              }`}
-            >
-              {bar.black > 0 && (
-                <div
-                  onPointerDown={(e) => handlePointerDownOrigin('bar', e)}
-                  className="relative flex flex-col items-center cursor-grab active:cursor-grabbing"
-                >
-                  <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-gradient-to-br from-slate-800 to-slate-950 border-2 border-slate-700 shadow-lg flex items-center justify-center font-bold text-amber-100 text-xs">
-                    {bar.black}
-                  </div>
-                  <span className="text-[9px] text-amber-200 font-semibold mt-0.5">Svart</span>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Top Right Quadrant (Points 19 to 24) - SVART HJEMMEFELT */}
-          <div className="flex-1 flex h-full relative bg-purple-950/20">
-            <span className="absolute top-1 right-2 text-[9px] font-bold text-purple-300/60 uppercase tracking-widest pointer-events-none">
-              Svart Hjemmefelt (19-24)
-            </span>
-            {[19, 20, 21, 22, 23, 24].map((p) => renderPointTriangle(p, true))}
-          </div>
-
-          {/* Off-board Tray Right Top (Black Bear Off) */}
-          <div
-            data-drop-target="off"
-            onClick={onOffClick}
-            className={`w-12 sm:w-16 h-full border-l-2 border-amber-900/50 flex flex-col items-center justify-center p-1 cursor-pointer transition-all ${
-              blackOffTarget
-                ? 'bg-emerald-500/40 ring-2 ring-emerald-400 animate-pulse'
-                : 'hover:bg-white/5'
-            }`}
-            title="Svart Utbearing"
-          >
-            <span className="text-[9px] sm:text-[10px] text-purple-200 font-bold mb-1">Svart Ut</span>
-            <div className="w-8 h-8 rounded-full bg-slate-900 border border-slate-700 text-amber-100 font-bold flex items-center justify-center text-xs shadow">
-              {off.black}
-            </div>
-          </div>
-        </div>
-
-        {/* Center Divider Strip */}
-        <div className="h-2 sm:h-3 bg-amber-950 border-y border-amber-900/60 flex items-center justify-center">
-          <div className="w-20 h-1 bg-amber-500/40 rounded-full" />
-        </div>
-
-        {/* Bottom Section: Points 12-7 (Left) | BAR | Points 6-1 (Right, White Home) */}
-        <div className={`relative flex-1 flex rounded-b-xl ${themeStyles.feltBg} border border-amber-900/30 overflow-hidden`}>
-          {/* Reserve Tray Left Bottom (Black Reserve for Begynne ute) */}
-          {startRule === 'ute' && (
-            <div
+              data-drop-target="reserve-noop"
               onClick={() => onReserveClick('black')}
-              className={`w-12 sm:w-16 h-full border-r-2 border-amber-900/50 flex flex-col items-center justify-center p-1 cursor-pointer transition-all ${
-                isSelected('reserve') && currentTurn === 'black'
-                  ? 'bg-amber-500/30 ring-2 ring-amber-400'
-                  : 'hover:bg-white/5'
+              onPointerDown={(e) => reserve.black > 0 && handlePointerDownOrigin('reserve', e)}
+              className={`flex-1 w-full flex flex-col items-center justify-center gap-1 cursor-pointer ${
+                isSelReserveBlack ? 'shadow-[0_0_0_2px_#93c5fd_inset] rounded-[10px]' : ''
               }`}
-              title="Svart Reserve (Klikk eller dra inn)"
             >
-              <span className="text-[9px] sm:text-[10px] text-slate-300 font-bold mb-1">Reserve</span>
-              {reserve.black > 0 ? (
+              <span className="text-[8px] font-extrabold tracking-widest uppercase text-[#93c5fd]/55">
+                Reserve
+              </span>
+              {reserve.black > 0 && (
                 <div
-                  onPointerDown={(e) => handlePointerDownOrigin('reserve', e)}
-                  className="w-8 h-8 rounded-full bg-gradient-to-br from-slate-800 to-slate-950 text-amber-100 font-bold flex items-center justify-center text-xs shadow border border-slate-700 animate-pulse cursor-grab active:cursor-grabbing"
+                  className="w-[30px] h-[30px] rounded-full border-2 flex items-center justify-center font-extrabold text-xs text-[#f3e9d8] animate-chip-drop shadow-[0_3px_7px_rgba(0,0,0,.5)]"
+                  style={{ background: CHECKER_BLACK_BG, borderColor: '#050506' }}
                 >
                   {reserve.black}
                 </div>
-              ) : (
-                <span className="text-[9px] text-slate-500">Tom</span>
               )}
             </div>
-          )}
-
-          {/* Bottom Left Quadrant (Points 12 to 7) - Ytre felt */}
-          <div className="flex-1 flex h-full relative">
-            <span className="absolute bottom-1 left-2 text-[9px] font-bold text-amber-200/40 uppercase tracking-widest pointer-events-none">
-              Ytre Felt (7-12)
-            </span>
-            {[12, 11, 10, 9, 8, 7].map((p) => renderPointTriangle(p, false))}
           </div>
+        )}
 
-          {/* Center BAR Bottom Spacing */}
-          <div className="w-12 sm:w-16 md:w-20 h-full bg-amber-950/90 border-x-2 border-amber-900/70 flex flex-col items-center justify-center">
-            <div className="w-2 h-12 bg-amber-800/40 rounded-full" />
-          </div>
+        <div className="flex-1 flex flex-col">
+          <div className="flex-1 flex">{[13, 14, 15, 16, 17, 18].map((p) => renderPoint(p, true))}</div>
+          <div className="flex-1 flex">{[12, 11, 10, 9, 8, 7].map((p) => renderPoint(p, false))}</div>
+        </div>
 
-          {/* Bottom Right Quadrant (Points 6 to 1) - HVIT HJEMMEFELT */}
-          <div className="flex-1 flex h-full relative bg-amber-500/10">
-            <span className="absolute bottom-1 right-2 text-[9px] font-bold text-amber-300/70 uppercase tracking-widest pointer-events-none">
-              Hvit Hjemmefelt (1-6)
-            </span>
-            {[6, 5, 4, 3, 2, 1].map((p) => renderPointTriangle(p, false))}
-          </div>
-
-          {/* Off-board Tray Right Bottom (White Bear Off) */}
+        {/* Bar column */}
+        <div className="w-[8.5%] min-w-11 bg-gradient-to-b from-[#1a0d05] to-[#241407] border-x-2 border-[#c9a24a]/35 flex flex-col items-center relative z-10">
           <div
-            data-drop-target="off"
-            onClick={onOffClick}
-            className={`w-12 sm:w-16 h-full border-l-2 border-amber-900/50 flex flex-col items-center justify-center p-1 cursor-pointer transition-all ${
-              whiteOffTarget
-                ? 'bg-emerald-500/40 ring-2 ring-emerald-400 animate-pulse'
-                : 'hover:bg-white/5'
+            data-drop-target="bar-noop"
+            onClick={() => onBarClick('black')}
+            onPointerDown={(e) => bar.black > 0 && handlePointerDownOrigin('bar', e)}
+            className={`flex-1 w-full flex flex-col items-center justify-center gap-1 cursor-pointer ${
+              isSelBar && currentTurn === 'black' ? 'shadow-[0_0_0_2px_#93c5fd_inset] rounded-[10px]' : ''
             }`}
-            title="Hvit Utbearing"
           >
-            <span className="text-[9px] sm:text-[10px] text-amber-200 font-bold mb-1">Hvit Ut</span>
-            <div className="w-8 h-8 rounded-full bg-amber-100 border border-amber-300 text-amber-950 font-bold flex items-center justify-center text-xs shadow">
-              {off.white}
-            </div>
+            <span className="text-[8px] font-extrabold tracking-widest uppercase text-[#93c5fd]/55">Bar</span>
+            {bar.black > 0 && (
+              <div
+                className="w-[30px] h-[30px] rounded-full border-2 flex items-center justify-center font-extrabold text-xs text-[#f3e9d8] animate-chip-drop shadow-[0_3px_7px_rgba(0,0,0,.5)]"
+                style={{ background: CHECKER_BLACK_BG, borderColor: '#050506' }}
+              >
+                {bar.black}
+              </div>
+            )}
+          </div>
+
+          <div className="w-9 h-5 rounded-md bg-gradient-to-br from-[#e8cd85] to-[#8a6a24] border border-[#5c4419] flex items-center justify-center text-[10px] font-extrabold text-[#2a1710] my-1.5">
+            {gameState.doublingCube.value}x
+          </div>
+
+          <div
+            data-drop-target="bar-noop"
+            onClick={() => onBarClick('white')}
+            onPointerDown={(e) => bar.white > 0 && handlePointerDownOrigin('bar', e)}
+            className={`flex-1 w-full flex flex-col items-center justify-center gap-1 cursor-pointer ${
+              isSelBar && currentTurn === 'white' ? 'shadow-[0_0_0_2px_#e8cd85_inset] rounded-[10px]' : ''
+            }`}
+          >
+            {bar.white > 0 && (
+              <div
+                className="w-[30px] h-[30px] rounded-full border-2 flex items-center justify-center font-extrabold text-xs animate-chip-drop shadow-[0_3px_7px_rgba(0,0,0,.5)]"
+                style={{ background: CHECKER_WHITE_BG, borderColor: '#a9822f', color: '#4a2c18' }}
+              >
+                {bar.white}
+              </div>
+            )}
+            <span className="text-[8px] font-extrabold tracking-widest uppercase text-[#e8cd85]/55">Bar</span>
           </div>
         </div>
-      </div>
 
-      {/* Floating Dragging Checker Element */}
-      {dragOrigin !== null && dragPos && (
-        <div
-          className="fixed pointer-events-none z-50 transform -translate-x-1/2 -translate-y-1/2 w-9 h-9 sm:w-11 sm:h-11 rounded-full shadow-2xl border-2"
-          style={{
-            left: `${dragPos.x}px`,
-            top: `${dragPos.y}px`,
-            background:
-              currentTurn === 'white'
-                ? 'radial-gradient(circle at 35% 30%, #fdf6e8, #e0c894 70%)'
-                : 'radial-gradient(circle at 35% 30%, #4a4a52, #0a0a0c 70%)',
-            borderColor: currentTurn === 'white' ? '#a9822f' : '#050506',
-            boxShadow: '0 10px 25px rgba(0,0,0,0.6)',
-          }}
-        />
-      )}
+        <div className="flex-1 flex flex-col">
+          <div className="flex-1 flex">{[19, 20, 21, 22, 23, 24].map((p) => renderPoint(p, true))}</div>
+          <div className="flex-1 flex">{[6, 5, 4, 3, 2, 1].map((p) => renderPoint(p, false))}</div>
+        </div>
+
+        {/* Off column */}
+        <div className="w-[8.5%] min-w-11 border-l-2 border-[#c9a24a]/30 flex flex-col items-center">
+          <div
+            data-drop-target="off"
+            onClick={() => currentTurn === 'black' && onOffClick()}
+            className={`flex-1 w-full flex flex-col items-center justify-center gap-1.5 cursor-pointer ${
+              offTargetActive && currentTurn === 'black' ? 'shadow-[0_0_0_2px_#34d399_inset] rounded-[10px]' : ''
+            }`}
+          >
+            <span className="text-[8px] font-bold uppercase tracking-wide text-[#93c5fd]">Ute</span>
+            <div className="w-7 h-7 rounded-full bg-[#1a0d05] border-2 border-[#93c5fd]/40 flex items-center justify-center text-[11px] font-extrabold text-[#dbeafe]">
+              {off.black}
+            </div>
+          </div>
+          <div
+            data-drop-target="off"
+            onClick={() => currentTurn === 'white' && onOffClick()}
+            className={`flex-1 w-full flex flex-col items-center justify-center gap-1.5 cursor-pointer ${
+              offTargetActive && currentTurn === 'white' ? 'shadow-[0_0_0_2px_#34d399_inset] rounded-[10px]' : ''
+            }`}
+          >
+            <div className="w-7 h-7 rounded-full bg-[#1a0d05] border-2 border-[#e8cd85]/50 flex items-center justify-center text-[11px] font-extrabold text-[#f3e0a8]">
+              {off.white}
+            </div>
+            <span className="text-[8px] font-bold uppercase tracking-wide text-[#e8cd85]">Ute</span>
+          </div>
+        </div>
+
+        {dragOrigin !== null && dragPos && (
+          <div
+            className="fixed w-8 h-8 rounded-full pointer-events-none z-[999]"
+            style={{
+              left: dragPos.x,
+              top: dragPos.y,
+              transform: 'translate(-50%,-50%)',
+              background: currentTurn === 'white' ? CHECKER_WHITE_BG : CHECKER_BLACK_BG,
+              border: `2px solid ${currentTurn === 'white' ? '#a9822f' : '#050506'}`,
+              boxShadow: '0 8px 18px rgba(0,0,0,.5)',
+            }}
+          />
+        )}
+      </div>
     </div>
   );
 };

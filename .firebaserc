@@ -1,0 +1,14 @@
+{
+  "projects": {
+    "default": "norsk-backgammon"
+  },
+  "targets": {
+    "norsk-backgammon": {
+      "hosting": {
+        "app": [
+          "spill-backgammon"
+        ]
+      }
+    }
+  }
+}

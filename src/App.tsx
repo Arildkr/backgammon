@@ -22,7 +22,8 @@ import { sounds } from './utils/sound';
 import { Board } from './components/Board';
 import { Controls } from './components/Controls';
 import { Header } from './components/Header';
-import { RotateCw } from 'lucide-react';
+import { TurnLegend } from './components/TurnLegend';
+import { DiceBar } from './components/DiceBar';
 
 export const App: React.FC = () => {
   const [gameState, setGameState] = useState<GameState>(() => {
@@ -424,6 +425,21 @@ export const App: React.FC = () => {
     }));
   };
 
+  // Live toggle between Player-vs-Player and Player-vs-AI
+  const handleToggleGameMode = () => {
+    setGameState((prev) => ({ ...prev, gameMode: prev.gameMode === 'ai' ? 'pvp' : 'ai' }));
+  };
+
+  // Quick restart keeping the current configuration
+  const handleQuickReset = () => {
+    handleNewGame({
+      startRule: gameState.startRule,
+      gameMode: gameState.gameMode,
+      aiDifficulty: gameState.aiDifficulty,
+      boardTheme: gameState.boardTheme,
+    });
+  };
+
   // AI Turn Logic Automation
   useEffect(() => {
     if (
@@ -462,15 +478,18 @@ export const App: React.FC = () => {
   }, [gameState]);
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col items-center justify-between p-3 sm:p-6 font-sans relative">
+    <div
+      className="min-h-screen flex flex-col items-center p-4 pb-10 font-sans relative"
+      style={{ background: 'radial-gradient(ellipse at 50% -10%,#2a1710 0%,rgba(18,9,5,0) 55%),#0e0906' }}
+    >
       {/* Mobile Portrait Rotation Overlay */}
-      <div className="fixed inset-0 z-[100] bg-slate-950 flex flex-col items-center justify-center gap-4 text-center p-6 sm:hidden portrait:flex landscape:hidden">
-        <div className="w-14 h-24 border-4 border-amber-400 rounded-2xl animate-spin relative flex items-center justify-center">
-          <RotateCw className="w-8 h-8 text-amber-400" />
+      <div className="rotate-gate fixed inset-0 z-[500] bg-[#0e0906] flex-col items-center justify-center gap-4 text-center p-8">
+        <div className="w-[54px] h-[88px] border-4 border-[#e8cd85] rounded-[10px] relative animate-rotate-phone">
+          <div className="absolute bottom-1.5 left-1/2 -translate-x-1/2 w-3.5 h-[3px] rounded bg-[#e8cd85]" />
         </div>
-        <h2 className="text-xl font-bold text-amber-300">Vri Skjermen Din</h2>
-        <p className="text-xs text-slate-300 max-w-xs">
-          Backgammon-brettet krever liggende format (landscape) for best visning og spillopplevelse.
+        <h2 className="text-xl text-[#e8cd85] m-0">Vri skjermen din</h2>
+        <p className="text-[13px] text-[#b8a488] m-0 max-w-xs">
+          Backgammon-brettet trenger liggende format for å vises riktig. Roter telefonen din.
         </p>
       </div>
 
@@ -479,10 +498,27 @@ export const App: React.FC = () => {
         onToggleSound={() =>
           setGameState((prev) => ({ ...prev, soundEnabled: !prev.soundEnabled }))
         }
+        gameMode={gameState.gameMode}
+        onToggleGameMode={handleToggleGameMode}
+        onQuickReset={handleQuickReset}
         stats={gameState.stats}
       />
 
-      <main className="w-full flex flex-col items-center justify-center flex-1 my-2">
+      <TurnLegend currentTurn={gameState.currentTurn} gameOver={!!gameState.winner} />
+
+      <DiceBar
+        currentTurn={gameState.currentTurn}
+        gameMode={gameState.gameMode}
+        aiDifficulty={gameState.aiDifficulty}
+        gameOver={!!gameState.winner}
+        dice={gameState.dice}
+        remainingDice={gameState.remainingDice}
+        isRolling={gameState.isRolling}
+        onRoll={handleRollDice}
+        canRoll={gameState.turnPhase === 'roll' && !(gameState.gameMode === 'ai' && gameState.currentTurn === 'black')}
+      />
+
+      <main className="w-full flex flex-col items-center">
         <Board
           gameState={gameState}
           onPointClick={handlePointClick}
@@ -495,7 +531,6 @@ export const App: React.FC = () => {
 
         <Controls
           gameState={gameState}
-          onRollDice={handleRollDice}
           onUndoMove={handleUndoMove}
           onGetHint={handleGetHint}
           onOfferDouble={handleOfferDouble}
@@ -508,13 +543,13 @@ export const App: React.FC = () => {
 
       {/* Floating Toast Notification */}
       {toastMessage && (
-        <div className="fixed bottom-8 left-1/2 -translate-x-1/2 bg-slate-900 border-2 border-amber-500/50 text-slate-100 px-6 py-3 rounded-2xl shadow-2xl font-bold text-sm z-50 animate-bounce">
+        <div className="fixed left-1/2 bottom-8 -translate-x-1/2 bg-[#241407] border border-[#c9a24a]/40 text-[#f3e9d8] px-5 py-2.5 rounded-[11px] font-semibold text-[13px] shadow-2xl z-[200] animate-toast-in">
           {toastMessage}
         </div>
       )}
 
-      <footer className="py-2 text-center text-xs text-slate-500 font-medium">
-        Backgammon Master &bull; Antigravity Edition
+      <footer className="py-2 text-center text-xs text-[#b8a488]/60 font-medium">
+        Backgammon
       </footer>
     </div>
   );
