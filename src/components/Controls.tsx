@@ -13,7 +13,6 @@ interface ControlsProps {
     gameMode: GameMode;
     boardTheme: BoardTheme;
   }) => void;
-  onChangeTheme: (theme: BoardTheme) => void;
   pipWhite: number;
   pipBlack: number;
   showSettings: boolean;
@@ -27,7 +26,6 @@ export const Controls: React.FC<ControlsProps> = ({
   onOfferDouble,
   onRespondDouble,
   onNewGame,
-  onChangeTheme,
   pipWhite,
   pipBlack,
   showSettings,
@@ -141,7 +139,7 @@ export const Controls: React.FC<ControlsProps> = ({
           <div className="bg-[#1a0d05] border border-[#c9a24a]/40 p-6 rounded-2xl max-w-lg w-full shadow-2xl flex flex-col gap-5 animate-modal-in">
             <div className="flex items-center justify-between border-b border-[#c9a24a]/20 pb-3">
               <h3 className="text-xl font-bold text-[#f3e9d8] flex items-center gap-2 m-0">
-                <Settings className="w-5 h-5 text-[#e8cd85]" /> Nytt Spill &amp; Innstillinger
+                <Settings className="w-5 h-5 text-[#e8cd85]" /> Nytt spill og innstillinger
               </h3>
               <button
                 onClick={onCloseSettings}
@@ -153,7 +151,7 @@ export const Controls: React.FC<ControlsProps> = ({
 
             <div className="flex flex-col gap-2">
               <label className="text-xs font-bold text-[#e8cd85] uppercase tracking-wider">
-                Start-konfigurasjon (Regel)
+                Start-konfigurasjon (regel)
               </label>
               <div className="grid grid-cols-2 gap-3">
                 <button
@@ -165,7 +163,7 @@ export const Controls: React.FC<ControlsProps> = ({
                       : 'bg-white/[0.03] border-[#c9a24a]/20 text-[#b8a488]'
                   }`}
                 >
-                  <div className="font-bold text-sm">Begynne Inne</div>
+                  <div className="font-bold text-sm">Begynne inne</div>
                   <div className="text-[11px] opacity-80 mt-1">Standard backgammon med 15 brikker plassert på brettet.</div>
                 </button>
 
@@ -178,7 +176,7 @@ export const Controls: React.FC<ControlsProps> = ({
                       : 'bg-white/[0.03] border-[#c9a24a]/20 text-[#b8a488]'
                   }`}
                 >
-                  <div className="font-bold text-sm">Begynne Ute</div>
+                  <div className="font-bold text-sm">Begynne ute</div>
                   <div className="text-[11px] opacity-80 mt-1">Alle 15 brikker starter i reserve utenfor brettet.</div>
                 </button>
               </div>
@@ -213,33 +211,11 @@ export const Controls: React.FC<ControlsProps> = ({
               </div>
             </div>
 
-            <div className="flex flex-col gap-2">
-              <label className="text-xs font-bold text-[#e8cd85] uppercase tracking-wider">
-                Brett-Tema <span className="font-normal normal-case text-[#b8a488]">(endres med én gang)</span>
-              </label>
-              <div className="grid grid-cols-3 gap-2">
-                {(['mahogany', 'leather', 'cyber'] as BoardTheme[]).map((theme) => (
-                  <button
-                    key={theme}
-                    type="button"
-                    onClick={() => onChangeTheme(theme)}
-                    className={`py-2 rounded-lg border text-xs font-bold capitalize cursor-pointer ${
-                      boardTheme === theme
-                        ? 'bg-[#e8cd85]/15 border-[#e8cd85]/50 text-[#e8cd85]'
-                        : 'bg-white/[0.03] border-[#c9a24a]/20 text-[#b8a488]'
-                    }`}
-                  >
-                    {theme === 'mahogany' ? '🪵 Mahogni' : theme === 'leather' ? '🖤 Skinn' : '⚡ Cyber'}
-                  </button>
-                ))}
-              </div>
-            </div>
-
             <button
               onClick={handleStartNewGame}
               className="mt-2 py-3 rounded-xl bg-gradient-to-br from-[#e8cd85] to-[#8a6a24] text-[#2a1710] font-extrabold text-base cursor-pointer"
             >
-              Start Nytt Spill
+              Start nytt spill
             </button>
           </div>
         </div>

@@ -503,6 +503,8 @@ export const App: React.FC = () => {
         onToggleGameMode={handleToggleGameMode}
         onQuickReset={handleQuickReset}
         onOpenSettings={() => setShowSettings(true)}
+        boardTheme={gameState.boardTheme}
+        onChangeTheme={handleChangeTheme}
         stats={gameState.stats}
       />
 
@@ -542,7 +544,6 @@ export const App: React.FC = () => {
         onOfferDouble={handleOfferDouble}
         onRespondDouble={handleRespondDouble}
         onNewGame={handleNewGame}
-        onChangeTheme={handleChangeTheme}
         pipWhite={pipWhite}
         pipBlack={pipBlack}
         showSettings={showSettings}

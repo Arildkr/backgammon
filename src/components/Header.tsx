@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
-import { Volume2, VolumeX, HelpCircle, RotateCcw, Settings } from 'lucide-react';
-import type { GameMode } from '../types/backgammon';
+import React, { useState, useRef, useEffect } from 'react';
+import { Volume2, VolumeX, HelpCircle, RotateCcw, Settings, Palette } from 'lucide-react';
+import type { GameMode, BoardTheme } from '../types/backgammon';
 
 interface HeaderProps {
   soundEnabled: boolean;
@@ -9,8 +9,16 @@ interface HeaderProps {
   onToggleGameMode: () => void;
   onQuickReset: () => void;
   onOpenSettings: () => void;
+  boardTheme: BoardTheme;
+  onChangeTheme: (theme: BoardTheme) => void;
   stats: { whiteWins: number; blackWins: number };
 }
+
+const THEME_OPTIONS: { value: BoardTheme; label: string }[] = [
+  { value: 'mahogany', label: '🪵 Mahogni' },
+  { value: 'leather', label: '🖤 Skinn' },
+  { value: 'cyber', label: '⚡ Cyber' },
+];
 
 export const Header: React.FC<HeaderProps> = ({
   soundEnabled,
@@ -19,20 +27,37 @@ export const Header: React.FC<HeaderProps> = ({
   onToggleGameMode,
   onQuickReset,
   onOpenSettings,
+  boardTheme,
+  onChangeTheme,
   stats,
 }) => {
   const [showRules, setShowRules] = useState(false);
+  const [showThemeMenu, setShowThemeMenu] = useState(false);
+  const themeMenuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!showThemeMenu) return;
+    const handleClickOutside = (e: MouseEvent) => {
+      if (themeMenuRef.current && !themeMenuRef.current.contains(e.target as Node)) {
+        setShowThemeMenu(false);
+      }
+    };
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setShowThemeMenu(false);
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener('keydown', handleEscape);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('keydown', handleEscape);
+    };
+  }, [showThemeMenu]);
 
   return (
     <header className="w-full max-w-[1180px] flex flex-wrap items-center justify-between gap-3 px-1">
       {/* Logo + Title */}
       <div className="flex items-center gap-3.5">
-        <div className="w-[46px] h-[46px] rounded-xl bg-gradient-to-br from-[#e8cd85] to-[#8a6a24] grid grid-cols-2 gap-[5px] p-[7px] shadow-[0_8px_16px_rgba(0,0,0,0.45),inset_0_1px_1px_rgba(255,255,255,0.5)] shrink-0">
-          <div className="rounded-full bg-[#2a1710]" />
-          <div />
-          <div />
-          <div className="rounded-full bg-[#2a1710]" />
-        </div>
+        <img src="/logo.png" alt="Terninger" className="w-[52px] h-[52px] object-contain shrink-0" />
         <div>
           <h1 className="text-[24px] leading-tight m-0">Backgammon med Linnea</h1>
           <p className="mt-0.5 text-xs text-[#b8a488]">Klikk eller dra brikkene for å flytte</p>
@@ -53,7 +78,7 @@ export const Header: React.FC<HeaderProps> = ({
             gameMode === 'ai' ? 'bg-[#e8cd85]/15' : 'bg-white/[0.04]'
           }`}
         >
-          {gameMode === 'ai' ? 'Spiller mot Linnea' : 'Spiller vs Spiller'}
+          {gameMode === 'ai' ? 'Spiller mot Linnea' : 'Spiller vs spiller'}
         </button>
 
         <button
@@ -71,6 +96,37 @@ export const Header: React.FC<HeaderProps> = ({
         >
           {soundEnabled ? <Volume2 className="w-[18px] h-[18px]" /> : <VolumeX className="w-[18px] h-[18px] opacity-60" />}
         </button>
+
+        <div className="relative" ref={themeMenuRef}>
+          <button
+            onClick={() => setShowThemeMenu((v) => !v)}
+            className="w-[38px] h-[38px] rounded-[11px] bg-white/[0.04] border border-[#c9a24a]/25 text-[#e8cd85] text-[15px] cursor-pointer flex items-center justify-center"
+            title="Brett-tema"
+          >
+            <Palette className="w-[18px] h-[18px]" />
+          </button>
+
+          {showThemeMenu && (
+            <div className="absolute right-0 top-[46px] z-[250] w-[170px] p-1.5 rounded-[11px] bg-[#1a0d05] border border-[#c9a24a]/40 shadow-2xl flex flex-col gap-1 animate-modal-in">
+              {THEME_OPTIONS.map((opt) => (
+                <button
+                  key={opt.value}
+                  onClick={() => {
+                    onChangeTheme(opt.value);
+                    setShowThemeMenu(false);
+                  }}
+                  className={`text-left py-2 px-2.5 rounded-[8px] text-xs font-bold cursor-pointer ${
+                    boardTheme === opt.value
+                      ? 'bg-[#e8cd85]/15 text-[#e8cd85]'
+                      : 'text-[#b8a488] hover:bg-white/[0.05]'
+                  }`}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
 
         <button
           onClick={onQuickReset}
