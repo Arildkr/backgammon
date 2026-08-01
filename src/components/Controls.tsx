@@ -13,6 +13,7 @@ interface ControlsProps {
     gameMode: GameMode;
     boardTheme: BoardTheme;
   }) => void;
+  onChangeTheme: (theme: BoardTheme) => void;
   pipWhite: number;
   pipBlack: number;
   showSettings: boolean;
@@ -26,6 +27,7 @@ export const Controls: React.FC<ControlsProps> = ({
   onOfferDouble,
   onRespondDouble,
   onNewGame,
+  onChangeTheme,
   pipWhite,
   pipBlack,
   showSettings,
@@ -45,7 +47,6 @@ export const Controls: React.FC<ControlsProps> = ({
 
   const [selectedStartRule, setSelectedStartRule] = useState<StartRule>(startRule);
   const [selectedGameMode, setSelectedGameMode] = useState<GameMode>(gameMode);
-  const [selectedTheme, setSelectedTheme] = useState<BoardTheme>(boardTheme);
 
   const isAITurn = gameMode === 'ai' && currentTurn === 'black';
 
@@ -53,7 +54,7 @@ export const Controls: React.FC<ControlsProps> = ({
     onNewGame({
       startRule: selectedStartRule,
       gameMode: selectedGameMode,
-      boardTheme: selectedTheme,
+      boardTheme,
     });
     onCloseSettings();
   };
@@ -213,15 +214,17 @@ export const Controls: React.FC<ControlsProps> = ({
             </div>
 
             <div className="flex flex-col gap-2">
-              <label className="text-xs font-bold text-[#e8cd85] uppercase tracking-wider">Brett-Tema</label>
+              <label className="text-xs font-bold text-[#e8cd85] uppercase tracking-wider">
+                Brett-Tema <span className="font-normal normal-case text-[#b8a488]">(endres med én gang)</span>
+              </label>
               <div className="grid grid-cols-3 gap-2">
                 {(['mahogany', 'leather', 'cyber'] as BoardTheme[]).map((theme) => (
                   <button
                     key={theme}
                     type="button"
-                    onClick={() => setSelectedTheme(theme)}
+                    onClick={() => onChangeTheme(theme)}
                     className={`py-2 rounded-lg border text-xs font-bold capitalize cursor-pointer ${
-                      selectedTheme === theme
+                      boardTheme === theme
                         ? 'bg-[#e8cd85]/15 border-[#e8cd85]/50 text-[#e8cd85]'
                         : 'bg-white/[0.03] border-[#c9a24a]/20 text-[#b8a488]'
                     }`}

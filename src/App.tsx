@@ -427,6 +427,11 @@ export const App: React.FC = () => {
     setGameState((prev) => ({ ...prev, gameMode: prev.gameMode === 'ai' ? 'pvp' : 'ai' }));
   };
 
+  // Live board theme change — purely cosmetic, doesn't touch the board state
+  const handleChangeTheme = (boardTheme: BoardTheme) => {
+    setGameState((prev) => ({ ...prev, boardTheme }));
+  };
+
   // Quick restart keeping the current configuration
   const handleQuickReset = () => {
     handleNewGame({
@@ -537,6 +542,7 @@ export const App: React.FC = () => {
         onOfferDouble={handleOfferDouble}
         onRespondDouble={handleRespondDouble}
         onNewGame={handleNewGame}
+        onChangeTheme={handleChangeTheme}
         pipWhite={pipWhite}
         pipBlack={pipBlack}
         showSettings={showSettings}
