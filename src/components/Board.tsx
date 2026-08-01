@@ -1,5 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useLayoutEffect } from 'react';
 import type { GameState, Player, BoardTheme } from '../types/backgammon';
+
+interface AnimatingMove {
+  fromKey: string;
+  toKey: string;
+  color: Player;
+}
 
 interface BoardProps {
   gameState: GameState;
@@ -9,6 +15,7 @@ interface BoardProps {
   onOffClick: () => void;
   onExecuteMove: (from: number | 'bar' | 'reserve', to: number | 'off') => void;
   hitFlashPoint: number | null;
+  animatingMove: AnimatingMove | null;
 }
 
 const THEMES: Record<
@@ -58,6 +65,8 @@ const THEMES: Record<
 
 const CHECKER_WHITE_BG = 'radial-gradient(circle at 35% 30%,#fdf6e8,#e0c894 70%)';
 const CHECKER_BLACK_BG = 'radial-gradient(circle at 35% 30%,#4a4a52,#0a0a0c 70%)';
+// Keep in sync with ANIM_DURATION in App.tsx (how long App.tsx keeps animatingMove set)
+const ANIM_DURATION_MS = 350;
 
 export const Board: React.FC<BoardProps> = ({
   gameState,
@@ -67,12 +76,58 @@ export const Board: React.FC<BoardProps> = ({
   onOffClick,
   onExecuteMove,
   hitFlashPoint,
+  animatingMove,
 }) => {
   const { points, bar, off, reserve, currentTurn, selectedOrigin, validMoves, boardTheme, startRule } =
     gameState;
 
   const [dragOrigin, setDragOrigin] = useState<number | 'bar' | 'reserve' | null>(null);
   const [dragPos, setDragPos] = useState<{ x: number; y: number } | null>(null);
+
+  // Registry of point/bar/off/reserve DOM nodes, used to animate a checker travelling between them
+  const cellRefs = useRef<Record<string, HTMLDivElement | null>>({});
+  const setCellRef = (key: string) => (el: HTMLDivElement | null) => {
+    cellRefs.current[key] = el;
+  };
+
+  // Imperative travel-ghost: driven directly via the DOM (not React state) so the
+  // "start" position is guaranteed to be committed before the "end" position is
+  // applied - relying on React re-renders + rAF for this proved unreliable
+  // (headless Chromium can collapse both state updates into a single paint).
+  const ghostRef = useRef<HTMLDivElement>(null);
+
+  useLayoutEffect(() => {
+    const el = ghostRef.current;
+    if (!el) return;
+
+    if (!animatingMove) {
+      el.style.opacity = '0';
+      return;
+    }
+    const fromEl = cellRefs.current[animatingMove.fromKey];
+    const toEl = cellRefs.current[animatingMove.toKey];
+    if (!fromEl || !toEl) return;
+
+    const fromRect = fromEl.getBoundingClientRect();
+    const toRect = toEl.getBoundingClientRect();
+    const color = animatingMove.color;
+
+    el.style.transition = 'none';
+    el.style.opacity = '1';
+    el.style.left = `${fromRect.left + fromRect.width / 2}px`;
+    el.style.top = `${fromRect.top + fromRect.height / 2}px`;
+    el.style.background = color === 'white' ? CHECKER_WHITE_BG : CHECKER_BLACK_BG;
+    el.style.borderColor = color === 'white' ? '#a9822f' : '#050506';
+
+    // Force a synchronous style flush so the "from" position is actually committed
+    // before we change to the "to" position - otherwise the browser can coalesce
+    // both writes and the transition never has a starting frame to animate from.
+    void el.getBoundingClientRect();
+
+    el.style.transition = `left ${ANIM_DURATION_MS}ms ease, top ${ANIM_DURATION_MS}ms ease`;
+    el.style.left = `${toRect.left + toRect.width / 2}px`;
+    el.style.top = `${toRect.top + toRect.height / 2}px`;
+  }, [animatingMove]);
 
   useEffect(() => {
     const handlePointerMove = (e: PointerEvent) => {
@@ -121,13 +176,14 @@ export const Board: React.FC<BoardProps> = ({
     }
   };
 
-  const renderChips = (checkers: Player[]) => {
+  const renderChips = (checkers: Player[], suppressTop: boolean) => {
     const count = checkers.length;
     if (count === 0) return null;
     const player = checkers[0];
     const maxShow = 4;
     const overflow = count > maxShow;
-    const shown = overflow ? maxShow - 1 : count;
+    let shown = overflow ? maxShow - 1 : count;
+    if (suppressTop && shown > 0) shown -= 1;
     return (
       <>
         {Array.from({ length: shown }).map((_, i) => (
@@ -158,10 +214,12 @@ export const Board: React.FC<BoardProps> = ({
     const startTag = pointIndex === 24 ? 'HVIT START' : pointIndex === 1 ? 'SVART START' : '';
     const startTagColor = pointIndex === 24 ? '#e8cd85' : '#93c5fd';
     const homeTint = pointIndex >= 19 ? theme.homeBlack : pointIndex <= 6 ? theme.homeWhite : 'transparent';
+    const suppressTop = animatingMove?.toKey === String(pointIndex);
 
     return (
       <div
         key={pointIndex}
+        ref={setCellRef(String(pointIndex))}
         data-drop-target={pointIndex}
         onClick={() => onPointClick(pointIndex)}
         onPointerDown={(e) => handlePointerDownOrigin(pointIndex, e)}
@@ -224,7 +282,7 @@ export const Board: React.FC<BoardProps> = ({
             isTop ? 'justify-start pt-4' : 'justify-end pb-4 flex-col-reverse'
           }`}
         >
-          {renderChips(checkers)}
+          {renderChips(checkers, suppressTop)}
         </div>
       </div>
     );
@@ -252,6 +310,7 @@ export const Board: React.FC<BoardProps> = ({
         {startRule === 'ute' && (
           <div className="w-[8.5%] min-w-11 bg-gradient-to-b from-[#1a0d05] to-[#241407] border-x-2 border-[#c9a24a]/30 flex flex-col items-center relative z-10">
             <div
+              ref={setCellRef('reserve-white')}
               data-drop-target="reserve-noop"
               onClick={() => onReserveClick('white')}
               onPointerDown={(e) => reserve.white > 0 && handlePointerDownOrigin('reserve', e)}
@@ -272,6 +331,7 @@ export const Board: React.FC<BoardProps> = ({
               </span>
             </div>
             <div
+              ref={setCellRef('reserve-black')}
               data-drop-target="reserve-noop"
               onClick={() => onReserveClick('black')}
               onPointerDown={(e) => reserve.black > 0 && handlePointerDownOrigin('reserve', e)}
@@ -302,6 +362,7 @@ export const Board: React.FC<BoardProps> = ({
         {/* Bar column */}
         <div className="w-[8.5%] min-w-11 bg-gradient-to-b from-[#1a0d05] to-[#241407] border-x-2 border-[#c9a24a]/35 flex flex-col items-center relative z-10">
           <div
+            ref={setCellRef('bar-black')}
             data-drop-target="bar-noop"
             onClick={() => onBarClick('black')}
             onPointerDown={(e) => bar.black > 0 && handlePointerDownOrigin('bar', e)}
@@ -325,6 +386,7 @@ export const Board: React.FC<BoardProps> = ({
           </div>
 
           <div
+            ref={setCellRef('bar-white')}
             data-drop-target="bar-noop"
             onClick={() => onBarClick('white')}
             onPointerDown={(e) => bar.white > 0 && handlePointerDownOrigin('bar', e)}
@@ -352,6 +414,7 @@ export const Board: React.FC<BoardProps> = ({
         {/* Off column */}
         <div className="w-[8.5%] min-w-11 border-l-2 border-[#c9a24a]/30 flex flex-col items-center">
           <div
+            ref={setCellRef('off-black')}
             data-drop-target="off"
             onClick={() => currentTurn === 'black' && onOffClick()}
             className={`flex-1 w-full flex flex-col items-center justify-center gap-1.5 cursor-pointer ${
@@ -364,6 +427,7 @@ export const Board: React.FC<BoardProps> = ({
             </div>
           </div>
           <div
+            ref={setCellRef('off-white')}
             data-drop-target="off"
             onClick={() => currentTurn === 'white' && onOffClick()}
             className={`flex-1 w-full flex flex-col items-center justify-center gap-1.5 cursor-pointer ${
@@ -390,6 +454,18 @@ export const Board: React.FC<BoardProps> = ({
             }}
           />
         )}
+
+        <div
+          ref={ghostRef}
+          className="fixed w-8 h-8 rounded-full pointer-events-none z-[999]"
+          style={{
+            left: 0,
+            top: 0,
+            opacity: 0,
+            transform: 'translate(-50%,-50%)',
+            boxShadow: '0 8px 18px rgba(0,0,0,.5)',
+          }}
+        />
       </div>
     </div>
   );

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import confetti from 'canvas-confetti';
 import type {
   GameState,
@@ -55,6 +55,18 @@ export const App: React.FC = () => {
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [hitFlashPoint, setHitFlashPoint] = useState<number | null>(null);
   const [showSettings, setShowSettings] = useState(false);
+  const [animatingMove, setAnimatingMove] = useState<{
+    fromKey: string;
+    toKey: string;
+    color: Player;
+  } | null>(null);
+  const animTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Keep in sync with ANIM_DURATION_MS in Board.tsx (the ghost's CSS transition length)
+  const ANIM_DURATION = 350;
+
+  const keyFor = (loc: number | 'bar' | 'reserve' | 'off', color: Player) =>
+    typeof loc === 'number' ? String(loc) : `${loc}-${color}`;
 
   const showToast = (msg: string) => {
     setToastMessage(msg);
@@ -130,7 +142,14 @@ export const App: React.FC = () => {
   };
 
   // Helper to execute a valid move
-  const executeMove = (move: Move) => {
+  const executeMove = (move: Move, opts?: { skipAnim?: boolean }) => {
+    if (!opts?.skipAnim) {
+      const color = gameState.currentTurn;
+      if (animTimerRef.current) clearTimeout(animTimerRef.current);
+      setAnimatingMove({ fromKey: keyFor(move.from, color), toKey: keyFor(move.to, color), color });
+      animTimerRef.current = setTimeout(() => setAnimatingMove(null), ANIM_DURATION);
+    }
+
     setGameState((prev) => {
       const { newPoints, newBar, newOff, newReserve } = applyMove(
         prev.points,
@@ -240,7 +259,8 @@ export const App: React.FC = () => {
   ) => {
     const move = gameState.validMoves.find((m) => m.from === from && m.to === to);
     if (move) {
-      executeMove(move);
+      // Dragging already shows the checker travelling under the cursor
+      executeMove(move, { skipAnim: true });
     } else {
       if (gameState.bar[gameState.currentTurn] > 0 && from !== 'bar') {
         showToast('Sett inn brikke fra baren først!');
@@ -452,7 +472,7 @@ export const App: React.FC = () => {
       if (gameState.turnPhase === 'roll') {
         const timer = setTimeout(() => {
           handleRollDice();
-        }, 700);
+        }, 900);
         return () => clearTimeout(timer);
       } else if (gameState.turnPhase === 'move') {
         const timer = setTimeout(() => {
@@ -472,7 +492,7 @@ export const App: React.FC = () => {
               turnHistory: [],
             }));
           }
-        }, 800);
+        }, 1000);
         return () => clearTimeout(timer);
       }
     }
@@ -534,6 +554,7 @@ export const App: React.FC = () => {
           onOffClick={handleOffClick}
           onExecuteMove={handleExecuteDirectMove}
           hitFlashPoint={hitFlashPoint}
+          animatingMove={animatingMove}
         />
       </div>
 
