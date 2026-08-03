@@ -155,7 +155,7 @@ export function getValidMoves(
   }
 
   // Case 2: Player has checkers in RESERVE (begynne ute mode)
-  // If reserve > 0, player CAN enter from reserve onto board
+  // Must enter from reserve before any other move, same as the bar
   if (reserve[player] > 0) {
     for (const die of uniqueDice) {
       const targetPoint = player === 'white' ? 25 - die : die;
@@ -171,6 +171,7 @@ export function getValidMoves(
         });
       }
     }
+    return moves; // Must enter reserve checkers before any other moves
   }
 
   // Case 3: Move checkers on the BOARD

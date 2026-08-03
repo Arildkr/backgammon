@@ -264,6 +264,8 @@ export const App: React.FC = () => {
     } else {
       if (gameState.bar[gameState.currentTurn] > 0 && from !== 'bar') {
         showToast('Sett inn brikke fra baren først!');
+      } else if (gameState.reserve[gameState.currentTurn] > 0 && from !== 'reserve') {
+        showToast('Sett inn brikke fra reserven først!');
       }
     }
   };
@@ -274,6 +276,11 @@ export const App: React.FC = () => {
 
     if (gameState.bar[gameState.currentTurn] > 0 && gameState.selectedOrigin !== 'bar') {
       showToast('Sett inn brikke fra baren først!');
+      return;
+    }
+
+    if (gameState.reserve[gameState.currentTurn] > 0 && gameState.selectedOrigin !== 'reserve') {
+      showToast('Sett inn brikke fra reserven først!');
       return;
     }
 

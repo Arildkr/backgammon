@@ -177,7 +177,9 @@ export const Controls: React.FC<ControlsProps> = ({
                   }`}
                 >
                   <div className="font-bold text-sm">Begynne ute</div>
-                  <div className="text-[11px] opacity-80 mt-1">Alle 15 brikker starter i reserve utenfor brettet.</div>
+                  <div className="text-[11px] opacity-80 mt-1">
+                    Alle 15 brikker starter i reserve utenfor brettet, og må settes inn før du kan flytte andre brikker.
+                  </div>
                 </button>
               </div>
             </div>
